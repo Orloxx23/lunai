@@ -1,4 +1,10 @@
-import { IconCompass } from "@tabler/icons-react";
+import {
+  IconBook,
+  IconBooks,
+  IconCompass,
+  IconHome,
+  IconUsers,
+} from "@tabler/icons-react";
 
 type SidebarItem = {
   title?: string;
@@ -6,10 +12,32 @@ type SidebarItem = {
   href?: string;
 };
 
+const sidebarIconSize = 24;
+
 export const sidebarItems: SidebarItem[] = [
   {
-    title: "Explora",
-    href: "/",
-    icon: <IconCompass size={20} />,
+    title: "Inicio",
+    href: "/dashboard",
+    icon: <IconHome size={sidebarIconSize} />,
+  },
+  {
+    title: "Explorar",
+    href: "/explore",
+    icon: <IconCompass size={sidebarIconSize} />,
+  },
+  {
+    title: "Biblioteca",
+    href: "/library",
+    icon: <IconBooks size={sidebarIconSize} />,
+  },
+  {
+    title: "Grupos",
+    href: "/groups",
+    icon: <IconUsers size={sidebarIconSize} />,
+  },
+  {
+    title: "Historial",
+    href: "/history",
+    icon: <IconBook size={sidebarIconSize} />,
   },
 ];

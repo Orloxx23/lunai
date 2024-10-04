@@ -14,6 +14,7 @@ import { createClient } from "@/utils/supabase/client";
 import { User } from "@supabase/supabase-js";
 import { createBrowserClient } from "@supabase/ssr";
 import { useRouter } from "next/navigation";
+import SelectTheme from "../select-theme";
 
 export default function UserMenu() {
   const [user, setUser] = useState<User | null>(null);
@@ -61,6 +62,10 @@ export default function UserMenu() {
             <span className="text-sm text-gray-500">{user?.email}</span>
           </div>
         </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <div>
+          <SelectTheme /> 
+        </div>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={signOut}>Sign out</DropdownMenuItem>
       </DropdownMenuContent>

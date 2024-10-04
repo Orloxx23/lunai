@@ -39,7 +39,7 @@ export function CommandDialogSearch() {
   }, [])
 
   return (
-    <div className="relative w-full max-w-sm mx-auto flex items-center">
+    <div className="relative w-full max-w-sm mx-auto hidden md:flex items-center">
       <Search className="absolute left-2 h-4 w-4 text-muted-foreground" />
       <Input
         placeholder="Buscar..."
