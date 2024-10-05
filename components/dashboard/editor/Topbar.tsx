@@ -19,14 +19,15 @@ import Link from "next/link";
 import UserMenu from "../UserMenu";
 import Generator from "./Generator";
 import { useEditor } from "@/context/EditorContext";
+import { Quiz } from "@/lib/types/editorTypes";
 
 interface Props {
-  title?: string;
+  quiz?: Quiz;
 }
 
-export default function Topbar({ title }: Props) {
+export default function Topbar({ quiz }: Props) {
   const { saving, saveQuiz } = useEditor();
-  const [titleValue, setTitleValue] = useState(title);
+  const [titleValue, setTitleValue] = useState(quiz?.name || "");
   return (
     <div className="fixed top-0 w-full bg-background h-[7vh] py-4 px-8 flex items-center justify-between gap-4 border-b">
       <div className="flex items-center gap-2 w-fit">

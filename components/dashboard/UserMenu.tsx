@@ -28,6 +28,7 @@ export default function UserMenu() {
 
     if (!error) {
       setUser(data.user);
+      console.log(data.user?.user_metadata.picture);
     }
   };
 
@@ -51,8 +52,15 @@ export default function UserMenu() {
     <DropdownMenu>
       <DropdownMenuTrigger>
         <Avatar className="rounded-md">
-          <AvatarImage src="https://github.com/shadcn.png" />
-          <AvatarFallback className="rounded-md">{user?.email?.[0].toUpperCase()}</AvatarFallback>
+          <AvatarImage
+            src={
+              "https://cdn.dribbble.com/userupload/7665678/file/original-af4f01530557fffe165038f24b3124bc.jpg?resize=400x300&vertical=center"
+            }
+            className="object-cover"
+          />
+          <AvatarFallback className="rounded-md">
+            {user?.email?.[0].toUpperCase()}
+          </AvatarFallback>
         </Avatar>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
@@ -64,7 +72,7 @@ export default function UserMenu() {
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <div>
-          <SelectTheme /> 
+          <SelectTheme />
         </div>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={signOut}>Sign out</DropdownMenuItem>

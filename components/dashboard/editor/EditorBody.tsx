@@ -6,15 +6,24 @@ import { useEditor } from "@/context/EditorContext";
 import QuestionEditor from "./QuestionEditor";
 import { Button } from "@/components/ui/button";
 import { IconPlus } from "@tabler/icons-react";
+import { Quiz } from "@/lib/types/editorTypes";
 
-export default function EditorBody() {
-  const { quiz, updateQuiz } = useEditor();
+interface Props {
+  quiz: Quiz;
+}
+
+export default function EditorBody({ quiz }: Props) {
+  const { setQuiz, updateQuiz } = useEditor();
+
+  useEffect(() => {
+    setQuiz(quiz);
+  }, []);
 
   return (
     <div className="max-w-3xl mx-auto flex flex-col gap-4">
       <MainInfo />
 
-      {quiz?.questions.map((question, index) => (
+      {quiz?.questions?.map((question, index) => (
         <QuestionEditor
           key={"quesiton-" + index}
           index={index}
