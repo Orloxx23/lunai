@@ -22,10 +22,10 @@ export default function Sidebar() {
           <Link
             key={index}
             href={item.href ?? ""}
-            className={`flex lg:justify-center 2xl:justify-start items-center gap-4 py-4 px-4 hover:bg-white/10 text-lg transition-colors duration-300 rounded-md ${
+            className={`flex lg:justify-center 2xl:justify-start items-center gap-4 py-4 px-4  text-lg transition-colors duration-300 rounded-md ${
               pathname === item.href
-                ? "bg-white text-primary hover:bg-white"
-                : "text-primary-foreground"
+                ? "bg-white text-primary hover:bg-white "
+                : "text-primary-foreground hover:bg-white/10"
             }`}
           >
             <span className="">{item.icon}</span>

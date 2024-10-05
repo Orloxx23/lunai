@@ -1,3 +1,4 @@
+import { APP_NAME } from "@/lib/constants/general";
 import { IconMoonFilled } from "@tabler/icons-react";
 import Link from "next/link";
 import React from "react";
@@ -13,7 +14,7 @@ export default function NotFound() {
             aria-label="logo"
           >
             <IconMoonFilled className="text-primary" size={36} />
-            Lunai
+            {APP_NAME}
           </Link>
 
           <p className="mb-4 text-sm font-semibold uppercase text-primary md:text-base">

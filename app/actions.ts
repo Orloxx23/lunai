@@ -6,6 +6,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
 export const signUpAction = async (formData: FormData) => {
+  const username = formData.get("username")?.toString();
   const email = formData.get("email")?.toString();
   const password = formData.get("password")?.toString();
   const supabase = createClient();
@@ -27,6 +28,20 @@ export const signUpAction = async (formData: FormData) => {
     console.error(error.code + " " + error.message);
     return encodedRedirect("error", "/sign-up", error.message);
   } else {
+    const { error } = await supabase.from("users").insert([
+      {
+        email: email,
+        username: username,
+        avatar:
+          "https://static.vecteezy.com/system/resources/previews/014/170/492/non_2x/pop-art-style-male-avatar-unique-abstract-vector.jpg",
+      },
+    ]);
+
+    if (error) {
+      console.error(error.code + " " + error.message);
+      return encodedRedirect("error", "/sign-up", error.message);
+    }
+
     return encodedRedirect(
       "success",
       "/sign-up",
@@ -139,7 +154,11 @@ export const googleSignInAction = async () => {
     },
   });
 
+  if (error) {
+    return encodedRedirect("error", "/sign-in", error.message);
+  }
+
   if (data.url) {
-    redirect(data.url); // use the redirect API for your server framework
+    redirect(data.url);
   }
 };

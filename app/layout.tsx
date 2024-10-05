@@ -3,6 +3,7 @@ import { ThemeProvider } from "next-themes";
 import "./globals.css";
 import Providers from "@/components/Providers";
 import { Analytics } from "@vercel/analytics/react";
+import { APP_NAME } from "@/lib/constants/general";
 
 const defaultUrl = process.env.VERCEL_URL
   ? `https://${process.env.VERCEL_URL}`
@@ -10,9 +11,8 @@ const defaultUrl = process.env.VERCEL_URL
 
 export const metadata = {
   metadataBase: new URL(defaultUrl),
-  title: "Lunai: El Poder del Conocimiento con Inteligencia Artificial",
-  description:
-    "Descubre Lunai, una innovadora plataforma de inteligencia artificial diseñada para iluminar tu camino hacia el conocimiento. Inspirada en la sabiduría de la luna, Lunai combina tecnología avanzada con una experiencia intuitiva, ayudándote a explorar nuevas ideas y obtener respuestas claras. Con un enfoque único en el aprendizaje profundo y la conexión de datos, Lunai te acompaña en tu viaje hacia la comprensión. ¡Potencia tu curiosidad con Lunai!",
+  title: `${APP_NAME}: El Poder del Conocimiento con Inteligencia Artificial`,
+  description: `Descubre ${APP_NAME}, una innovadora plataforma de inteligencia artificial diseñada para iluminar tu camino hacia el conocimiento. Inspirada en la sabiduría de la luna, ${APP_NAME} combina tecnología avanzada con una experiencia intuitiva, ayudándote a explorar nuevas ideas y obtener respuestas claras. Con un enfoque único en el aprendizaje profundo y la conexión de datos, ${APP_NAME} te acompaña en tu viaje hacia la comprensión. ¡Potencia tu curiosidad con ${APP_NAME}!`,
 };
 
 export default function RootLayout({

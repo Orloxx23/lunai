@@ -52,7 +52,7 @@ export default function UserMenu() {
       <DropdownMenuTrigger>
         <Avatar className="rounded-md">
           <AvatarImage src="https://github.com/shadcn.png" />
-          <AvatarFallback>{user?.email?.[0].toUpperCase()}</AvatarFallback>
+          <AvatarFallback className="rounded-md">{user?.email?.[0].toUpperCase()}</AvatarFallback>
         </Avatar>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">

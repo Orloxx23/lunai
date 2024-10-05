@@ -1,6 +1,7 @@
 import AuthButton from "@/components/header-auth"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { APP_NAME } from "@/lib/constants/general"
 import { MoonIcon, StarIcon, BrainCircuitIcon } from "lucide-react"
 import Link from "next/link"
 
@@ -9,7 +10,7 @@ export default function Index() {
     <div className="min-h-screen bg-background text-primary-foreground flex flex-col items-center justify-center p-4">
       
       <header className="text-center mb-12">
-        <h1 className="text-5xl font-bold mb-4 text-foreground">Lunai</h1>
+        <h1 className="text-5xl font-bold mb-4 text-foreground">{APP_NAME}</h1>
         <p className="text-xl text-foreground max-w-2xl mx-auto">
           Iluminando mentes a través de cuestionarios potenciados por inteligencia artificial
         </p>
@@ -56,7 +57,7 @@ export default function Index() {
       </main>
 
       <footer className="mt-16 text-center text-sm text-gray-500">
-        <p>&copy; 2024 Lunai. Todos los derechos reservados.</p>
+        <p>&copy; 2024 {APP_NAME}. Todos los derechos reservados.</p>
       </footer>
       
       <AuthButton />
