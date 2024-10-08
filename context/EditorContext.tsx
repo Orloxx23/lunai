@@ -2,8 +2,8 @@
 
 import useDebounced from "@/hooks/use-debounced";
 import { APP_NAME } from "@/lib/constants/general";
-import { generateProjectName } from "@/lib/functions/editor";
-import { Quiz } from "@/lib/types/editorTypes";
+import { generateProjectName, generateUUID } from "@/lib/functions/editor";
+import { Question, Quiz } from "@/lib/types/editorTypes";
 import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
 import React, {
@@ -22,6 +22,10 @@ type MyContextData = {
   saveQuiz: () => void;
   createQuiz: () => void;
   creating: boolean;
+  questions: Question[];
+  createQuestion: () => void;
+  deleteQuestion: (questionId: string) => void;
+  updateQuestion: (questionId: string, key: keyof Question, value: any) => void;
 };
 
 const EditorContext = createContext<MyContextData | undefined>(undefined);
@@ -38,11 +42,11 @@ const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
     description: "",
     questions: [],
   });
+  const [questions, setQuestions] = useState<Question[]>([]);
 
   const [saving, setSaving] = useState(false);
   const [isExternalUpdate, setIsExternalUpdate] = useState(false); // Nuevo estado para detectar cambios externos
   const debouncedQuiz = useDebounced(quiz, 700);
-
   const updateQuiz = (key: keyof Quiz, value: any) => {
     setQuiz((prev) => {
       if (!prev) return null;
@@ -112,10 +116,130 @@ const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
 
     if (error) {
       console.error("Error saving quiz", error);
+      return;
     }
 
     setSaving(false);
   };
+
+  const getQuestions = async () => {
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from("questions")
+      .select("*")
+      .eq("quizId", quiz?.id);
+
+    if (error) {
+      console.error("Error getting questions", error);
+    }
+
+    if (data) {
+      setQuestions(data);
+    }
+  };
+
+  const createQuestion = async () => {
+    const newQuestion: Question = {
+      id: generateUUID(),
+      title: "",
+      type: "multiple",
+      description: "",
+      quizId: quiz?.id || "",
+    };
+
+    setQuestions((prev) => [...prev, newQuestion]);
+
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from("questions")
+      .insert([newQuestion])
+      .select();
+
+    if (error) {
+      console.error("Error creating question", error);
+      questions.filter((q) => q.id !== newQuestion.id);
+    }
+
+    if (data) {
+      console.log("Question created", data);
+    }
+  };
+
+  const deleteQuestion = async (questionId: string) => {
+    const questionToDelete: Question | null | undefined = questions.find(
+      (q) => q.id === questionId
+    );
+
+    // Filtra la pregunta a eliminar
+    let tempQeustions = questions.filter((q) => q.id !== questionId);
+    setQuestions(tempQeustions);
+
+    // Obtener index de la pregunta a eliminar
+    const index = questions.findIndex((q) => q.id === questionId);
+
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from("questions")
+      .delete()
+      .eq("id", questionId)
+      .select();
+
+    if (error) {
+      console.error("Error deleting question", error);
+
+      getQuestions();
+    }
+
+    if (data) {
+      console.log("Question deleted", data);
+    }
+  };
+
+  const updateQuestion = async (
+    questionId: string,
+    key: keyof Question,
+    value: any
+  ) => {
+    const questionToUpdate: Question | null | undefined = questions.find(
+      (q) => q.id === questionId
+    );
+
+    if (!questionToUpdate) return;
+
+    const newQuestions = questions.map((q) =>
+      q.id === questionId
+        ? {
+            ...q,
+            [key]: value,
+          }
+        : q
+    );
+
+    setQuestions(newQuestions);
+
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from("questions")
+      .update({
+        [key]: value,
+      })
+      .eq("id", questionId)
+      .select();
+
+    if (error) {
+      console.error("Error updating question", error);
+      getQuestions();
+    }
+
+    if (data) {
+      console.log("Question updated", data);
+    }
+  };
+
+  useEffect(() => {
+    if (!quiz || !quiz.id) return;
+    getQuestions();
+  }, [quiz]);
 
   useEffect(() => {
     const saveIfChanged = async () => {
@@ -133,10 +257,15 @@ const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
   useEffect(() => {
     const supabase = createClient();
     const quizzes = supabase
-      .channel("custom-all-channel")
+      .channel("quizzes-channel")
       .on(
         "postgres_changes",
-        { event: "UPDATE", schema: "public", table: "quizzes" }, // Solo escucha actualizaciones
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "quizzes",
+          // filter: "quizId=eq." + quiz?.id,
+        }, // Solo escucha actualizaciones
         (payload) => {
           console.log("Quiz updated", payload);
           const newQuiz = payload.new as Quiz;
@@ -161,6 +290,30 @@ const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
     };
   }, [quiz]);
 
+  {/*useEffect(() => {
+    const supabase = createClient();
+    const questions = supabase
+      .channel("questions-channel")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "questions",
+          // filter: "quizId=eq." + quiz?.id,
+        }, // Solo escucha actualizaciones
+        (payload) => {
+          console.log("Questions updated", payload);
+          const questions = payload.new as Question[];
+        }
+      )
+      .subscribe();
+
+    return () => {
+      questions.unsubscribe();
+    };
+  }, [quiz]);*/}
+
   return (
     <EditorContext.Provider
       value={{
@@ -171,6 +324,10 @@ const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
         saveQuiz,
         createQuiz,
         creating,
+        questions,
+        createQuestion,
+        deleteQuestion,
+        updateQuestion,
       }}
     >
       {children}

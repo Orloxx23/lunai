@@ -22,8 +22,9 @@ export type Question = {
   id: string;
   title: string;
   description: string;
-  options: Option[];
   type: "multiple" | "trufalse" | "open";
+  quizId: string;
+  createdAt?: string;
 };
 
 export type Option = {
@@ -31,4 +32,5 @@ export type Option = {
   title: string;
   description: string;
   correct: boolean;
+  questionId: string;
 };

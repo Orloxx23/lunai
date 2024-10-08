@@ -13,7 +13,7 @@ interface Props {
 }
 
 export default function EditorBody({ quiz }: Props) {
-  const { setQuiz, updateQuiz } = useEditor();
+  const { setQuiz, updateQuiz, questions, createQuestion } = useEditor();
 
   useEffect(() => {
     setQuiz(quiz);
@@ -23,7 +23,7 @@ export default function EditorBody({ quiz }: Props) {
     <div className="max-w-3xl mx-auto flex flex-col gap-4">
       <MainInfo />
 
-      {quiz?.questions?.map((question, index) => (
+      {questions?.map((question, index) => (
         <QuestionEditor
           key={"quesiton-" + index}
           index={index}
@@ -34,21 +34,7 @@ export default function EditorBody({ quiz }: Props) {
       <Button
         variant={"default"}
         onClick={() => {
-          updateQuiz("questions", [
-            ...(quiz?.questions || []),
-            {
-              title: "",
-              type: "multiple",
-              options: [
-                {
-                  id: "a",
-                  title: "",
-                  correct: false,
-                },
-              ],
-              correct: "",
-            },
-          ]);
+          createQuestion();
         }}
       >
         <IconPlus size={24} />

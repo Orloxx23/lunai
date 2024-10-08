@@ -12,10 +12,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-import React from "react";
+import React, { useEffect } from "react";
 import { Label } from "@/components/ui/label";
 import AnswerEditor from "./AnswerEditor";
 import { ALPHABET } from "@/lib/constants/editor";
+import useDebounced from "@/hooks/use-debounced";
 
 interface Props {
   data: Question;
@@ -23,7 +24,17 @@ interface Props {
 }
 
 export default function QuestionEditor({ index, data }: Props) {
-  const { quiz, updateQuiz } = useEditor();
+  const { quiz, updateQuiz, deleteQuestion, updateQuestion } = useEditor();
+
+  const [questionData, setQuestionData] = React.useState<Question>(data);
+
+  const debouncedQuestionData = useDebounced(questionData, 700);
+
+  useEffect(() => {
+    if (debouncedQuestionData) {
+      updateQuestion(data.id, "title", debouncedQuestionData.title);
+    }
+  }, [debouncedQuestionData]);
 
   return (
     <div
@@ -32,12 +43,9 @@ export default function QuestionEditor({ index, data }: Props) {
       <div className="w-full flex gap-2">
         <Input
           placeholder="Pregunta"
-          value={data.title}
+          value={questionData.title}
           onChange={(e) => {
-            const newQuestions = quiz?.questions.map((q, i) =>
-              i === index ? { ...q, title: e.target.value } : q
-            );
-            updateQuiz("questions", newQuestions);
+            setQuestionData({ ...questionData, title: e.target.value });
           }}
           className="text-xl font-bold border-0 focus:border-2"
           onClick={(e) => {
@@ -65,20 +73,21 @@ export default function QuestionEditor({ index, data }: Props) {
           </SelectContent>
         </Select>
 
-        <Button
-          variant={"ghost"}
-          size={"icon"}
-          onClick={() => {
-            const newQuestions = quiz?.questions.filter((_, i) => i !== index);
-            updateQuiz("questions", newQuestions);
-          }}
-        >
-          <IconTrash size={24} />
-        </Button>
+        <div>
+          <Button
+            variant={"ghost"}
+            size={"icon"}
+            onClick={() => {
+              deleteQuestion(data.id);
+            }}
+          >
+            <IconTrash size={24} />
+          </Button>
+        </div>
       </div>
 
       <div className="flex flex-col gap-2">
-        {data.type === "multiple" && (
+        {/* {data.type === "multiple" && (
           <div className="flex flex-col gap-4">
             <div className="flex flex-col gap-1">
               <RadioGroup
@@ -135,7 +144,7 @@ export default function QuestionEditor({ index, data }: Props) {
               </Button>
             </div>
           </div>
-        )}
+        )} */}
       </div>
     </div>
   );
