@@ -26,8 +26,7 @@ interface Props {
 }
 
 export default function Topbar({ quiz }: Props) {
-  const { saving, saveQuiz } = useEditor();
-  const [titleValue, setTitleValue] = useState(quiz?.name || "");
+  const { saving, updateQuiz, saveQuiz, quiz: quizLocal } = useEditor();
   return (
     <div className="fixed top-0 w-full bg-background h-[7vh] py-4 px-8 flex items-center justify-between gap-4 border-b">
       <div className="flex items-center gap-2 w-fit">
@@ -47,9 +46,11 @@ export default function Topbar({ quiz }: Props) {
         </TooltipProvider>
 
         <Input
-          placeholder="Nombre del cuestionario"
-          value={titleValue || "Cuestionario sin nombre"}
-          onChange={(e) => setTitleValue(e.target.value)}
+          placeholder="Cuestionario sin nombre"
+          value={quizLocal?.name || ""}
+          onChange={(e) => {
+            updateQuiz("name", e.target.value);
+          }}
           className="text-2xl font-bold border-0 focus:border-2"
           onClick={(e) => e.currentTarget.select()}
         />

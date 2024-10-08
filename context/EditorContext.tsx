@@ -1,6 +1,8 @@
 "use client";
 
 import useDebounced from "@/hooks/use-debounced";
+import { APP_NAME } from "@/lib/constants/general";
+import { generateProjectName } from "@/lib/functions/editor";
 import { Quiz } from "@/lib/types/editorTypes";
 import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
@@ -115,44 +117,6 @@ const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
     setSaving(false);
   };
 
-  function generateProjectName(): string {
-    const adjectives = [
-      "Brilliant",
-      "Silent",
-      "Cosmic",
-      "Swift",
-      "Quantum",
-      "Lunar",
-      "Bright",
-      "Sonic",
-      "Nova",
-      "Electric",
-    ];
-
-    const nouns = [
-      "Phoenix",
-      "Wave",
-      "Falcon",
-      "Engine",
-      "Orbit",
-      "Horizon",
-      "Pulse",
-      "Drift",
-      "Echo",
-      "Fusion",
-    ];
-
-    const randomNumber = Math.floor(Math.random() * 1000);
-
-    const randomAdjective =
-      adjectives[Math.floor(Math.random() * adjectives.length)];
-    const randomNoun = nouns[Math.floor(Math.random() * nouns.length)];
-
-    const projectName = `${randomAdjective}${randomNoun}${randomNumber}`;
-
-    return projectName;
-  }
-
   useEffect(() => {
     const saveIfChanged = async () => {
       console.log("Saving if changed", quiz, debouncedQuiz);
@@ -160,6 +124,8 @@ const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
 
       await saveQuiz();
     };
+
+    document.title = `${quiz?.name || "Cuestionario sin nombre"} - ${APP_NAME}`;
 
     saveIfChanged();
   }, [debouncedQuiz]);
