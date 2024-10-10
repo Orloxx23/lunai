@@ -3,22 +3,17 @@
 import useDebounced from "@/hooks/use-debounced";
 import { APP_NAME } from "@/lib/constants/general";
 import { generateProjectName, generateUUID } from "@/lib/functions/editor";
-import { Question, Quiz } from "@/lib/types/editorTypes";
+import { Option, Question, Quiz } from "@/lib/types/editorTypes";
 import { createClient } from "@/utils/supabase/client";
-import { useRouter } from "next/navigation";
-import React, {
-  createContext,
-  useContext,
-  useEffect,
-  useState,
-  useRef,
-} from "react";
+import { usePathname, useRouter } from "next/navigation";
+import React, { createContext, useContext, useEffect, useState } from "react";
 
 type MyContextData = {
   quiz: Quiz | null;
   setQuiz: (quiz: Quiz) => void;
   updateQuiz: (key: keyof Quiz, value: any) => void;
   saving: boolean;
+  setSaving: (saving: boolean) => void;
   saveQuiz: () => void;
   createQuiz: () => void;
   creating: boolean;
@@ -34,6 +29,7 @@ const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   let router = useRouter();
+  let pathname = usePathname();
 
   const [quiz, setQuiz] = useState<Quiz | null>({
     id: "",
@@ -45,7 +41,6 @@ const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
   const [questions, setQuestions] = useState<Question[]>([]);
 
   const [saving, setSaving] = useState(false);
-  const [isExternalUpdate, setIsExternalUpdate] = useState(false); // Nuevo estado para detectar cambios externos
   const debouncedQuiz = useDebounced(quiz, 700);
   const updateQuiz = (key: keyof Quiz, value: any) => {
     setQuiz((prev) => {
@@ -68,11 +63,7 @@ const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
 
     const { data, error } = await supabase
       .from("quizzes")
-      .insert([
-        {
-          name,
-        },
-      ])
+      .insert([{ name }])
       .select();
 
     if (error) {
@@ -99,7 +90,7 @@ const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   const saveQuiz = async () => {
-    if (isExternalUpdate) return; // No guardes si es una actualización externa
+    if (!quiz?.id) return; // No guardes si no hay ID
 
     setSaving(true);
 
@@ -117,6 +108,10 @@ const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
     if (error) {
       console.error("Error saving quiz", error);
       return;
+    }
+
+    if (data) {
+      console.log("Quiz saved", data);
     }
 
     setSaving(false);
@@ -157,7 +152,7 @@ const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
 
     if (error) {
       console.error("Error creating question", error);
-      questions.filter((q) => q.id !== newQuestion.id);
+      setQuestions((prev) => prev.filter((q) => q.id !== newQuestion.id));
     }
 
     if (data) {
@@ -171,11 +166,10 @@ const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
     );
 
     // Filtra la pregunta a eliminar
-    let tempQeustions = questions.filter((q) => q.id !== questionId);
-    setQuestions(tempQeustions);
+    const tempQuestions = questions.filter((q) => q.id !== questionId);
+    setQuestions(tempQuestions);
 
-    // Obtener index de la pregunta a eliminar
-    const index = questions.findIndex((q) => q.id === questionId);
+    setSaving(true);
 
     const supabase = createClient();
     const { data, error } = await supabase
@@ -186,13 +180,14 @@ const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
 
     if (error) {
       console.error("Error deleting question", error);
-
       getQuestions();
     }
 
     if (data) {
       console.log("Question deleted", data);
     }
+
+    setSaving(false);
   };
 
   const updateQuestion = async (
@@ -216,13 +211,12 @@ const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
     );
 
     setQuestions(newQuestions);
+    setSaving(true);
 
     const supabase = createClient();
     const { data, error } = await supabase
       .from("questions")
-      .update({
-        [key]: value,
-      })
+      .update({ [key]: value })
       .eq("id", questionId)
       .select();
 
@@ -234,6 +228,8 @@ const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
     if (data) {
       console.log("Question updated", data);
     }
+
+    setSaving(false);
   };
 
   useEffect(() => {
@@ -242,6 +238,8 @@ const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
   }, [quiz]);
 
   useEffect(() => {
+    if (!quiz) return;
+
     const saveIfChanged = async () => {
       console.log("Saving if changed", quiz, debouncedQuiz);
       if (!quiz || !debouncedQuiz || quiz.id !== debouncedQuiz.id) return;
@@ -253,66 +251,6 @@ const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
 
     saveIfChanged();
   }, [debouncedQuiz]);
-
-  useEffect(() => {
-    const supabase = createClient();
-    const quizzes = supabase
-      .channel("quizzes-channel")
-      .on(
-        "postgres_changes",
-        {
-          event: "UPDATE",
-          schema: "public",
-          table: "quizzes",
-          // filter: "quizId=eq." + quiz?.id,
-        }, // Solo escucha actualizaciones
-        (payload) => {
-          console.log("Quiz updated", payload);
-          const newQuiz = payload.new as Quiz;
-
-          // Cambios externos detectados
-          if (
-            newQuiz.id !== quiz?.id ||
-            newQuiz.name !== quiz.name ||
-            newQuiz.title !== quiz.title ||
-            newQuiz.description !== quiz.description
-          ) {
-            setIsExternalUpdate(true); // Cambia el estado a cambio externo
-            setQuiz(newQuiz);
-            setTimeout(() => setIsExternalUpdate(false), 1000); // Reinicia el estado tras un tiempo
-          }
-        }
-      )
-      .subscribe();
-
-    return () => {
-      quizzes.unsubscribe();
-    };
-  }, [quiz]);
-
-  {/*useEffect(() => {
-    const supabase = createClient();
-    const questions = supabase
-      .channel("questions-channel")
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "questions",
-          // filter: "quizId=eq." + quiz?.id,
-        }, // Solo escucha actualizaciones
-        (payload) => {
-          console.log("Questions updated", payload);
-          const questions = payload.new as Question[];
-        }
-      )
-      .subscribe();
-
-    return () => {
-      questions.unsubscribe();
-    };
-  }, [quiz]);*/}
 
   return (
     <EditorContext.Provider
@@ -328,6 +266,7 @@ const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
         createQuestion,
         deleteQuestion,
         updateQuestion,
+        setSaving
       }}
     >
       {children}

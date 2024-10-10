@@ -31,6 +31,7 @@ export type Option = {
   id: string;
   title: string;
   description: string;
-  correct: boolean;
+  isCorrect: boolean;
   questionId: string;
+  createdAt?: string;
 };
