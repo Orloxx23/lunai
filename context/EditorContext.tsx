@@ -7,6 +7,8 @@ import { Option, Question, Quiz } from "@/lib/types/editorTypes";
 import { createClient } from "@/utils/supabase/client";
 import { usePathname, useRouter } from "next/navigation";
 import React, { createContext, useContext, useEffect, useState } from "react";
+import { experimental_useObject as useObject } from "ai/react";
+import { questionSchema } from "@/app/api/generate-quiz/quizSchemas";
 
 type MyContextData = {
   quiz: Quiz | null;
@@ -21,6 +23,14 @@ type MyContextData = {
   createQuestion: () => void;
   deleteQuestion: (questionId: string) => void;
   updateQuestion: (questionId: string, key: keyof Question, value: any) => void;
+  generateQuestions: (
+    amount: number,
+    context: string,
+    difficulty: string,
+    callback?: (value?: any) => void
+  ) => void;
+  generatedOptions: Option[];
+  generating: boolean;
 };
 
 const EditorContext = createContext<MyContextData | undefined>(undefined);
@@ -36,9 +46,10 @@ const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
     name: "",
     title: "",
     description: "",
-    questions: [],
   });
   const [questions, setQuestions] = useState<Question[]>([]);
+  const [generatedOptions, setGeneratedOptions] = useState<Option[]>([]);
+  const [generating, setGenerating] = useState(false);
 
   const [saving, setSaving] = useState(false);
   const debouncedQuiz = useDebounced(quiz, 700);
@@ -232,6 +243,81 @@ const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
     setSaving(false);
   };
 
+  const generateQuestions = async (
+    amount: number,
+    context: string,
+    difficulty: string,
+    callback?: (value?: any) => void
+  ) => {
+    setGenerating(true);
+    try {
+      const res = await fetch("/api/generate-quiz", {
+        method: "POST",
+        body: JSON.stringify({ amount, context, difficulty }),
+      });
+
+      const data = await res.json();
+      console.log("Generated questions", data);
+
+      const questionInserts = data.questions.map(async (question: any) => {
+        const newQuestion: Question = {
+          id: generateUUID(),
+          title: question.title,
+          type: "multiple",
+          description: question.description || "",
+          quizId: quiz?.id || "",
+        };
+
+        const supabase = createClient();
+        const { data: questionData, error: questionError } = await supabase
+          .from("questions")
+          .insert([newQuestion])
+          .select();
+
+        if (questionError) {
+          console.error("Error creating question", questionError);
+          return null; // Handle the question error by returning null
+        }
+
+        const optionsInserts = question.options.map(async (option: any) => {
+          const newOption: Option = {
+            id: generateUUID(),
+            title: option.title,
+            description: option.description || "",
+            isCorrect: option.isCorrect,
+            questionId: newQuestion.id,
+          };
+
+          const { data: optionData, error: optionError } = await supabase
+            .from("options")
+            .insert([newOption])
+            .select();
+
+          if (optionError) {
+            console.error("Error creating option", optionError);
+            return null; // Handle the option error
+          }
+
+          return newOption; // Return the newly created option
+        });
+
+        const options = await Promise.all(optionsInserts); // Wait for all options to be inserted
+        setGeneratedOptions((prev) => [...prev, ...options.filter(Boolean)]); // Filter out nulls
+
+        return newQuestion; // Return the newly created question
+      });
+
+      const questions = await Promise.all(questionInserts); // Wait for all questions to be inserted
+      setQuestions((prev) => [...prev, ...questions.filter(Boolean)]); // Filter out nulls
+
+      if (callback) callback();
+    } catch (err) {
+      console.error("Error generating questions", err);
+    } finally {
+      setGenerating(false); // Ensure setGenerating is called finally
+    }
+  };
+
   useEffect(() => {
     if (!quiz || !quiz.id) return;
     getQuestions();
@@ -266,7 +352,10 @@ const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
         createQuestion,
         deleteQuestion,
         updateQuestion,
-        setSaving
+        setSaving,
+        generateQuestions,
+        generatedOptions,
+        generating,
       }}
     >
       {children}

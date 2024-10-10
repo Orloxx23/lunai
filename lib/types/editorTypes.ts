@@ -12,7 +12,6 @@ export type Quiz = {
   name: string;
   title: string;
   description: string;
-  questions: Question[];
   createdAt?: string;
   updatedAt?: string;
   authorId?: string;

@@ -25,7 +25,7 @@ export default function EditorBody({ quiz }: Props) {
 
       {questions?.map((question, index) => (
         <QuestionEditor
-          key={"quesiton-" + index}
+          key={question.id}
           index={index}
           data={question}
         />

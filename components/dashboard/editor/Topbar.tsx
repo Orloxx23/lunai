@@ -26,9 +26,15 @@ interface Props {
 }
 
 export default function Topbar({ quiz }: Props) {
-  const { saving, updateQuiz, saveQuiz, quiz: quizLocal } = useEditor();
+  const {
+    saving,
+    updateQuiz,
+    saveQuiz,
+    quiz: quizLocal,
+    generateQuestions,
+  } = useEditor();
   return (
-    <div className="fixed top-0 w-full bg-background h-[7vh] py-4 px-8 flex items-center justify-between gap-4 border-b">
+    <div className="fixed top-0 w-full bg-background h-[7vh] py-4 px-8 flex items-center justify-between gap-4 border-b z-30">
       <div className="flex items-center gap-2 w-fit">
         <TooltipProvider>
           <Tooltip>

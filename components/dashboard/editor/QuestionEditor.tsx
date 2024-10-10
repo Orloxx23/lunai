@@ -26,7 +26,7 @@ interface Props {
 }
 
 export default function QuestionEditor({ index, data }: Props) {
-  const { quiz, updateQuiz, deleteQuestion, updateQuestion, setSaving } =
+  const { quiz, updateQuiz, deleteQuestion, updateQuestion, setSaving, generatedOptions } =
     useEditor();
 
   const [questionData, setQuestionData] = useState<Question>(data);
@@ -34,6 +34,10 @@ export default function QuestionEditor({ index, data }: Props) {
   const debouncedQuestionData = useDebounced(questionData, 700);
 
   const [options, setOptions] = useState<Option[]>([]);
+
+  const [tempSelectedOption, setTempSelectedOption] = useState<string | null>(
+    options.find((o) => o.isCorrect)?.id || ""
+  );
 
   const getOptions = async (questionId: string) => {
     const supabase = createClient();
@@ -47,7 +51,8 @@ export default function QuestionEditor({ index, data }: Props) {
     }
 
     if (data) {
-      return data;
+      setOptions(data);
+      setTempSelectedOption(data.find((o) => o.isCorrect)?.id || "");
     }
 
     return [];
@@ -150,10 +155,17 @@ export default function QuestionEditor({ index, data }: Props) {
   };
 
   useEffect(() => {
-    getOptions(data.id).then((data) => {
-      setOptions(data);
-    });
-  }, []);
+    if (data) {
+      getOptions(data.id);
+    }
+  }, [data]);
+
+  useEffect(() => {
+    setOptions((prev) => [
+      ...prev,
+      ...generatedOptions.filter((o) => o.questionId === data.id),
+    ])
+  }, [generatedOptions]);
 
   useEffect(() => {
     if (debouncedQuestionData) {
@@ -182,10 +194,7 @@ export default function QuestionEditor({ index, data }: Props) {
           disabled
           value={data.type}
           onValueChange={(e) => {
-            const newQuestions = quiz?.questions.map((q, i) =>
-              i === index ? { ...q, type: e } : q
-            );
-            updateQuiz("questions", newQuestions);
+            updateQuestion(data.id, "type", e);
           }}
         >
           <SelectTrigger className="w-[180px]">
@@ -217,11 +226,13 @@ export default function QuestionEditor({ index, data }: Props) {
             <div className="flex flex-col gap-1">
               <RadioGroup
                 defaultValue={options.find((o) => o.isCorrect)?.id || ""}
+                value={tempSelectedOption || ""}
                 onValueChange={(value) => {
                   options.forEach((o) => {
                     const isCorrect = o.id === value;
                     updateOption(o.id, "isCorrect", isCorrect, data.id);
                   });
+                  setTempSelectedOption(value);
                 }}
               >
                 {options.map((option) => (
