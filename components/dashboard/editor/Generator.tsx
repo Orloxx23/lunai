@@ -43,7 +43,7 @@ export default function Generator() {
 
   const topicSchema = z.object({
     amount: z.number().int().positive().min(1).max(10),
-    context: z.string().min(1).max(100),
+    context: z.string().min(1),
     difficulty: z.enum(["easy", "medium", "hard", "mixed"]),
   });
 
@@ -116,7 +116,7 @@ export default function Generator() {
                                 {...field}
                                 placeholder="Tema de las preguntas"
                                 className="resize-none"
-                                maxLength={100}
+                                //maxLength={100}
                               />
                             </FormControl>
                           </FormItem>
