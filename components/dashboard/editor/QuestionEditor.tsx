@@ -19,6 +19,7 @@ import { ALPHABET } from "@/lib/constants/editor";
 import useDebounced from "@/hooks/use-debounced";
 import { createClient } from "@/utils/supabase/client";
 import { generateUUID } from "@/lib/functions/editor";
+import { Textarea } from "@/components/ui/textarea";
 
 interface Props {
   data: Question;
@@ -178,19 +179,19 @@ export default function QuestionEditor({ index, data }: Props) {
       className={`w-full p-4 rounded-lg border bg-background flex flex-col gap-2 transition duration-300 `}
     >
       <div className="w-full flex gap-2">
-        <Input
+        <Textarea
           placeholder="Pregunta"
           value={questionData.title}
           onChange={(e) => {
             setQuestionData({ ...questionData, title: e.target.value });
           }}
-          className="text-xl font-bold border-0 focus:border-2"
+          className="text-xl font-bold border-0 focus:border-2 resize-none"
           onClick={(e) => {
             e.currentTarget.select();
           }}
         />
 
-        <Select
+        {/* <Select
           disabled
           value={data.type}
           onValueChange={(e) => {
@@ -205,7 +206,7 @@ export default function QuestionEditor({ index, data }: Props) {
             <SelectItem value="trufalse">Verdadero o falso</SelectItem>
             <SelectItem value="open">Respuesta abierta</SelectItem>
           </SelectContent>
-        </Select>
+        </Select> */}
 
         <div>
           <Button
