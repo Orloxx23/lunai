@@ -5,10 +5,12 @@ import { Quiz } from "@/lib/types/editorTypes";
 import { createClient } from "@/utils/supabase/client";
 import { IconMoonFilled } from "@tabler/icons-react";
 import React, { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 export default function LibraryPage() {
   const [loading, setLoading] = useState(true);
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
+  const [deleting, setDeleting] = useState(false);
 
   const getQuizzes = async () => {
     const supabase = createClient();
@@ -32,6 +34,38 @@ export default function LibraryPage() {
     }
   };
 
+  const deleteQuiz = async (id: string) => {
+    setDeleting(true);
+
+    // Obtenemos el quiz a eliminar de la lista con su index, lo sacamos de la lista y actualizamos el estado, si hay un error lo agregamos de nuevo en su posicion anterior
+    const index = quizzes.findIndex((quiz) => quiz.id === id);
+    const quiz = quizzes[index];
+    const newQuizzes = quizzes.filter((quiz) => quiz.id !== id);
+
+    setQuizzes(newQuizzes);
+
+    const supabase = createClient();
+    const { error } = await supabase
+      .from("quizzes")
+      .delete()
+      .eq("id", id);
+
+    if (error) {
+      console.error("Error deleting quiz", error);
+      toast.error("Error al eliminar el quiz");
+      // Si hay un error lo agregamos de nuevo en su posicion anterior, pero no podemos permitir que se repita el id
+      setQuizzes([
+        ...newQuizzes.slice(0, index),
+        quiz,
+        ...newQuizzes.slice(index),
+      ]);
+    }
+
+    setTimeout(() => {
+      setDeleting(false);
+    }, 2000);
+  };
+
   useEffect(() => {
     getQuizzes();
   }, []);
@@ -45,12 +79,10 @@ export default function LibraryPage() {
                 <div
                   key={index}
                   className="aspect-[9/10.5] flex flex-col rounded-md overflow-hidden bg-background opacity-30 animate-pulse"
-                >
-                  
-                </div>
+                ></div>
               ))
             : quizzes.map((quiz, index) => (
-                <QuizCard key={quiz.id} quiz={quiz} />
+                <QuizCard key={quiz.id} quiz={quiz} deleteQuiz={deleteQuiz} />
               ))}
         </div>
       </div>

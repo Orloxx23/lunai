@@ -5,6 +5,7 @@ import Providers from "@/components/Providers";
 import { Analytics } from "@vercel/analytics/react";
 import { APP_NAME } from "@/lib/constants/general";
 import Script from "next/script";
+import { Toaster } from "@/components/ui/sonner";
 
 const defaultUrl = process.env.VERCEL_URL
   ? `https://${process.env.VERCEL_URL}`
@@ -27,6 +28,7 @@ export default function RootLayout({
         <Providers>
           {children}
           <Analytics />
+          <Toaster richColors position="bottom-center" />
         </Providers>
 
         <Script

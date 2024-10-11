@@ -3,14 +3,31 @@
 import React, { useState } from "react";
 import { Quiz } from "@/lib/types/editorTypes";
 import { DateTime } from "luxon";
-import { IconLoader2, IconMoon, IconMoonFilled } from "@tabler/icons-react";
+import {
+  IconDots,
+  IconDotsVertical,
+  IconLoader2,
+  IconMoon,
+  IconMoonFilled,
+} from "@tabler/icons-react";
 import { useRouter } from "next-nprogress-bar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
+import { createClient } from "@/utils/supabase/client";
 
 interface Props {
   quiz: Quiz;
+  deleteQuiz: (id: string) => void;
 }
 
-export default function QuizCard({ quiz }: Props) {
+export default function QuizCard({ quiz, deleteQuiz }: Props) {
   let router = useRouter();
   const [loading, setLoading] = useState(false);
 
@@ -36,11 +53,32 @@ export default function QuizCard({ quiz }: Props) {
       <div className="h-2/3 bg-primary-foreground flex justify-center items-center w-full">
         <IconMoonFilled size={72} className="text-primary opacity-10" />
       </div>
-      <div className="p-4 h-1/3 bg-background w-full border-t border-border flex flex-col justify-start items-start">
-        <h1 className="text-sm font-bold">{quiz?.name}</h1>
-        <p className="text-sm text-muted-foreground">
-          {DateTime.fromISO(quiz?.createdAt || "").toFormat("LLL dd, yyyy")}
-        </p>
+      <div className="p-4 h-1/3 bg-background w-full border-t border-border flex justify-between items-center gap-2">
+        <div className="flex flex-col items-start justify-start truncate">
+          <h1 className="text-sm font-bold truncate">{quiz?.name}</h1>
+          <p className="text-sm text-muted-foreground truncate">
+            {DateTime.fromISO(quiz?.createdAt || "").toFormat("LLL dd, yyyy")}
+          </p>
+        </div>
+        <div className="">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon">
+                <IconDotsVertical />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem
+                onClick={(e) => {
+                  e.stopPropagation();
+                  deleteQuiz(quiz.id);
+                }}
+              >
+                Eliminar
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
     </button>
   );
