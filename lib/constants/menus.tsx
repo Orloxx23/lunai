@@ -20,24 +20,24 @@ export const sidebarItems: SidebarItem[] = [
     href: "/dashboard",
     icon: <IconHome size={sidebarIconSize} />,
   },
-  {
+  /*{
     title: "Explorar",
-    href: "/explore",
+    href: "/dashboard/explore",
     icon: <IconCompass size={sidebarIconSize} />,
-  },
+  },*/
   {
     title: "Biblioteca",
-    href: "/library",
+    href: "/dashboard/library",
     icon: <IconBooks size={sidebarIconSize} />,
   },
-  {
+  /*{
     title: "Grupos",
-    href: "/groups",
+    href: "/dashboard/groups",
     icon: <IconUsers size={sidebarIconSize} />,
-  },
-  {
+  },*/
+  /*{
     title: "Historial",
-    href: "/history",
+    href: "/dashboard/history",
     icon: <IconBook size={sidebarIconSize} />,
-  },
+  },*/
 ];

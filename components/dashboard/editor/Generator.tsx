@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   AlertDialog,
   AlertDialogContent,
@@ -10,7 +10,12 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import { IconBulb, IconFile, IconLoader2, IconSparkles } from "@tabler/icons-react";
+import {
+  IconBulb,
+  IconFile,
+  IconLoader2,
+  IconSparkles,
+} from "@tabler/icons-react";
 import Image from "next/image";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -76,7 +81,7 @@ export default function Generator() {
           <IconSparkles size={24} />
         </Button>
       </AlertDialogTrigger>
-      <AlertDialogContent className="max-w-2xl">
+      <AlertDialogContent className="max-w-2xl" forceMount>
         <AlertDialogHeader className="hidden">
           <AlertDialogTitle>Generar preguntas</AlertDialogTitle>
           <AlertDialogDescription>
@@ -189,7 +194,11 @@ export default function Generator() {
                           type="submit"
                           className="w-full"
                         >
-                          {generating ? <IconLoader2 className="animate-spin" /> : "Generar"}
+                          {generating ? (
+                            <IconLoader2 className="animate-spin" />
+                          ) : (
+                            "Generar"
+                          )}
                         </Button>
                       </div>
                     </form>
@@ -199,17 +208,57 @@ export default function Generator() {
               <TabsContent value="file">Change your password here.</TabsContent>
             </Tabs>
           </div>
-          <div className="w-2/5 aspect-[9/16] bg-primary rounded-lg overflow-hidden">
-            <Image
+          <div className="w-2/5 aspect-[9/16] rounded-lg overflow-hidden relative">
+            {/* <Image
               src={"/cave.webp"}
               width={576}
               height={1024}
               alt="Cave"
-              className="size-full"
-            />
+              className="size-full absolute"
+            /> */}
+            <PortalEffect />
           </div>
         </div>
       </AlertDialogContent>
     </AlertDialog>
   );
+}
+
+function PortalEffect() {
+  const vantaRef = useRef<HTMLDivElement | null>(null);
+  const vantaEffectRef = useRef<any>(null);
+
+  useEffect(() => {
+    const loadVantaEffect = () => {
+      if (
+        typeof window !== "undefined" &&
+        vantaRef.current &&
+        (window as any).VANTA
+      ) {
+        vantaEffectRef.current = (window as any).VANTA.FOG({
+          el: vantaRef.current,
+          THREE: (window as any).THREE,
+          mouseControls: true,
+          touchControls: true,
+          gyroControls: false,
+          minHeight: 200.0,
+          minWidth: 200.0,
+          highlightColor: 0xb400ff,
+          midtoneColor: 0x6900ff,
+          lowlightColor: 0x370032,
+          baseColor: 0xd987d4,
+          zoom: 2,
+          speed: 2.7
+        });
+      }
+    };
+
+    loadVantaEffect();
+
+    return () => {
+      if (vantaEffectRef.current) vantaEffectRef.current.destroy();
+    };
+  }, []);
+
+  return <div ref={vantaRef} className="size-full relative z-50" />;
 }

@@ -4,6 +4,7 @@ import "./globals.css";
 import Providers from "@/components/Providers";
 import { Analytics } from "@vercel/analytics/react";
 import { APP_NAME } from "@/lib/constants/general";
+import Script from "next/script";
 
 const defaultUrl = process.env.VERCEL_URL
   ? `https://${process.env.VERCEL_URL}`
@@ -21,12 +22,21 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={GeistSans.className} suppressHydrationWarning>
+    <html lang="es" className={GeistSans.className} suppressHydrationWarning>
       <body className="bg-background text-foreground">
         <Providers>
           {children}
           <Analytics />
         </Providers>
+
+        <Script
+          src="https://cdn.jsdelivr.net/npm/three@0.124.0/build/three.min.js"
+          strategy="beforeInteractive"
+        />
+        <Script
+          src="https://cdn.jsdelivr.net/npm/vanta@0.5.24/dist/vanta.fog.min.js"
+          strategy="beforeInteractive"
+        />
       </body>
     </html>
   );
