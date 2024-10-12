@@ -27,7 +27,7 @@ interface Props {
 }
 
 export default function QuestionEditor({ index, data }: Props) {
-  const { quiz, updateQuiz, deleteQuestion, updateQuestion, setSaving, generatedOptions } =
+  const { deleteQuestion, updateQuestion, setSaving, generatedOptions } =
     useEditor();
 
   const [questionData, setQuestionData] = useState<Question>(data);
@@ -162,14 +162,16 @@ export default function QuestionEditor({ index, data }: Props) {
   }, [data]);
 
   useEffect(() => {
-    setOptions((prev) => [
-      ...prev,
-      ...generatedOptions.filter((o) => o.questionId === data.id),
-    ])
+    setOptions((prev) => {
+      const existingOptions = prev.filter((o) => o.questionId === data.id);
+      const newOptions = generatedOptions.filter((o) => o.questionId === data.id && !existingOptions.some(eo => eo.id === o.id));
+      return [...prev, ...newOptions];
+    });
   }, [generatedOptions]);
 
   useEffect(() => {
     if (debouncedQuestionData) {
+      console.log("Updating question", debouncedQuestionData);
       updateQuestion(data.id, "title", debouncedQuestionData.title);
     }
   }, [debouncedQuestionData]);
