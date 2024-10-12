@@ -82,7 +82,7 @@ export default function QuestionEditor({ index, data }: Props) {
     }
 
     if (data) {
-      console.log("Option created", data);
+      
     }
   };
 
@@ -108,7 +108,7 @@ export default function QuestionEditor({ index, data }: Props) {
     }
 
     if (data) {
-      console.log("Option deleted", data);
+      
     }
   };
 
@@ -149,7 +149,7 @@ export default function QuestionEditor({ index, data }: Props) {
     }
 
     if (data) {
-      console.log("Option updated", data);
+      
     }
 
     setSaving(false);
@@ -171,7 +171,6 @@ export default function QuestionEditor({ index, data }: Props) {
 
   useEffect(() => {
     if (debouncedQuestionData) {
-      console.log("Updating question", debouncedQuestionData);
       updateQuestion(data.id, "title", debouncedQuestionData.title);
     }
   }, [debouncedQuestionData]);

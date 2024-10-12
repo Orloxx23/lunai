@@ -15,6 +15,8 @@ export type Quiz = {
   createdAt?: string;
   updatedAt?: string;
   authorId?: string;
+  isPublic: boolean;
+  state: "public" | "private" | "privateWithLink";
 };
 
 export type Question = {

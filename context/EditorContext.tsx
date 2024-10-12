@@ -46,6 +46,8 @@ const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
     name: "",
     title: "",
     description: "",
+    isPublic: false,
+    state: "private",
   });
   const [questions, setQuestions] = useState<Question[]>([]);
   const [generatedOptions, setGeneratedOptions] = useState<Option[]>([]);
@@ -85,7 +87,6 @@ const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
     }
 
     if (data) {
-      console.log("Quiz created", data);
       setQuiz((prev) => {
         if (!prev) return null;
         return {
@@ -124,7 +125,7 @@ const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
     }
 
     if (data) {
-      console.log("Quiz saved", data);
+
     }
 
     setSaving(false);
@@ -169,7 +170,7 @@ const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
     }
 
     if (data) {
-      console.log("Question created", data);
+
     }
   };
 
@@ -197,7 +198,7 @@ const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
     }
 
     if (data) {
-      console.log("Question deleted", data);
+      
     }
 
     setSaving(false);
@@ -239,7 +240,7 @@ const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
     }
 
     if (data) {
-      console.log("Question updated", data);
+      
     }
 
     setSaving(false);
@@ -259,7 +260,6 @@ const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
       });
 
       const data = await res.json();
-      console.log("Generated questions", data);
 
       const questionInserts = data.questions.map(async (question: any) => {
         const newQuestion: Question = {
@@ -337,7 +337,6 @@ const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
     if (!quiz) return;
 
     const saveIfChanged = async () => {
-      console.log("Saving if changed", quiz, debouncedQuiz);
       if (!quiz || !debouncedQuiz || quiz.id !== debouncedQuiz.id) return;
 
       await saveQuiz();

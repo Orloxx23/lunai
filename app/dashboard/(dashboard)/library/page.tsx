@@ -17,7 +17,6 @@ export default function LibraryPage() {
 
     const auth = await supabase.auth.getUser();
     const userId = auth.data.user?.id;
-    console.log("🚀 ~ getQuizzes ~ userId:", userId);
 
     let { data: quizzes, error } = await supabase
       .from("quizzes")

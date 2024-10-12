@@ -62,7 +62,6 @@ export default function Generator() {
   });
 
   function onSubmit(values: z.infer<typeof topicSchema>) {
-    console.log(values);
     generateQuestions(
       values.amount,
       values.context,

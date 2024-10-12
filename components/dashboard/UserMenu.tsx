@@ -24,11 +24,9 @@ export default function UserMenu() {
   const getUser = async () => {
     const supabase = createClient();
     const { data, error } = await supabase.auth.getUser();
-    console.log("🚀 ~ getUser ~ user:", data);
 
     if (!error) {
       setUser(data.user);
-      console.log(data.user?.user_metadata.picture);
     }
   };
 
