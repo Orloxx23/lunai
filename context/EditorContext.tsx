@@ -51,6 +51,8 @@ const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
   const [generatedOptions, setGeneratedOptions] = useState<Option[]>([]);
   const [generating, setGenerating] = useState(false);
 
+  const [questionsGeted, setQuestionsGeted] = useState(false);
+
   const [saving, setSaving] = useState(false);
   const debouncedQuiz = useDebounced(quiz, 700);
   const updateQuiz = (key: keyof Quiz, value: any) => {
@@ -319,8 +321,16 @@ const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   useEffect(() => {
-    if (!quiz || !quiz.id) return;
+    if (!quiz || !quiz.id || questionsGeted) return;
+
     getQuestions();
+    setQuestionsGeted(true);
+
+    return () => {
+      setQuestions([]);
+      setQuestionsGeted(false);
+    };
+
   }, [quiz]);
 
   useEffect(() => {
@@ -337,6 +347,10 @@ const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
 
     saveIfChanged();
   }, [debouncedQuiz]);
+
+  useEffect(() => {
+    setQuestionsGeted(false);
+  }, [pathname]);
 
   return (
     <EditorContext.Provider
