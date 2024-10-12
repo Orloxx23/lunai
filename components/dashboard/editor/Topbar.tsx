@@ -20,9 +20,10 @@ import UserMenu from "../UserMenu";
 import Generator from "./Generator";
 import { useEditor } from "@/context/EditorContext";
 import { Quiz } from "@/lib/types/editorTypes";
+import ShareButton from "./ShareButton";
 
 interface Props {
-  quiz?: Quiz;
+  quiz: Quiz;
 }
 
 export default function Topbar({ quiz }: Props) {
@@ -76,6 +77,7 @@ export default function Topbar({ quiz }: Props) {
             <IconDeviceFloppy size={24} />
           )}
         </Button>
+        <ShareButton quiz={quiz} />
         <UserMenu />
       </div>
     </div>
