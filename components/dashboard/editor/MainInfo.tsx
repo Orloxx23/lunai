@@ -18,9 +18,6 @@ export default function MainInfo() {
           updateQuiz("title", e.target.value);
         }}
         className="text-2xl font-bold border-0 focus:border-2"
-        onClick={(e) => {
-          e.currentTarget.select();
-        }}
       />
       <div className="relative">
         <Textarea

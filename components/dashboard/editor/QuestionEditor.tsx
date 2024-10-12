@@ -186,9 +186,6 @@ export default function QuestionEditor({ index, data }: Props) {
             setQuestionData({ ...questionData, title: e.target.value });
           }}
           className="text-xl font-bold border-0 focus:border-2 resize-none"
-          onClick={(e) => {
-            e.currentTarget.select();
-          }}
         />
 
         {/* <Select

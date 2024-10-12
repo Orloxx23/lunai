@@ -53,7 +53,6 @@ export default function AnswerEditor({
             setOptionData({ ...optionData, title: e.target.value });
           }}
           className="border-0 outline-0 ring-0 p-0 h-fit rounded"
-          onClick={(e) => e.currentTarget.select()}
         />
 
         <Button variant={"ghost"} onClick={() => {
