@@ -115,6 +115,7 @@ const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
         name: debouncedQuiz?.name,
         title: debouncedQuiz?.title,
         description: debouncedQuiz?.description,
+        state: debouncedQuiz?.state,
       })
       .eq("id", debouncedQuiz?.id)
       .select();
@@ -125,7 +126,6 @@ const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
     }
 
     if (data) {
-
     }
 
     setSaving(false);
@@ -170,7 +170,6 @@ const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
     }
 
     if (data) {
-
     }
   };
 
@@ -198,7 +197,6 @@ const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
     }
 
     if (data) {
-      
     }
 
     setSaving(false);
@@ -240,7 +238,6 @@ const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
     }
 
     if (data) {
-      
     }
 
     setSaving(false);
@@ -265,9 +262,10 @@ const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
         const newQuestion: Question = {
           id: generateUUID(),
           title: question.title,
-          type: "multiple",
+          type: question.type,
           description: question.description || "",
           quizId: quiz?.id || "",
+          correctAnswer: question.correctAnswer || null,
         };
 
         const supabase = createClient();
@@ -327,10 +325,9 @@ const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
     setQuestionsGeted(true);
 
     return () => {
-      setQuestions([]);
+      // setQuestions([]);
       setQuestionsGeted(false);
     };
-
   }, [quiz]);
 
   useEffect(() => {
@@ -349,6 +346,7 @@ const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
 
   useEffect(() => {
     setQuestionsGeted(false);
+    setQuestions([]);
   }, [pathname]);
 
   return (

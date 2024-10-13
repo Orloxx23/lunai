@@ -11,11 +11,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-
 import React, { useEffect, useState } from "react";
 import { Label } from "@/components/ui/label";
 import AnswerEditor from "./AnswerEditor";
-import { ALPHABET } from "@/lib/constants/editor";
 import useDebounced from "@/hooks/use-debounced";
 import { createClient } from "@/utils/supabase/client";
 import { generateUUID } from "@/lib/functions/editor";
@@ -29,16 +27,13 @@ interface Props {
 export default function QuestionEditor({ index, data }: Props) {
   const { deleteQuestion, updateQuestion, setSaving, generatedOptions } =
     useEditor();
-
   const [questionData, setQuestionData] = useState<Question>(data);
-
   const debouncedQuestionData = useDebounced(questionData, 700);
-
   const [options, setOptions] = useState<Option[]>([]);
-
   const [tempSelectedOption, setTempSelectedOption] = useState<string | null>(
     options.find((o) => o.isCorrect)?.id || ""
   );
+  const [openAnswer, setOpenAnswer] = useState<string>("");
 
   const getOptions = async (questionId: string) => {
     const supabase = createClient();
@@ -55,8 +50,6 @@ export default function QuestionEditor({ index, data }: Props) {
       setOptions(data);
       setTempSelectedOption(data.find((o) => o.isCorrect)?.id || "");
     }
-
-    return [];
   };
 
   const createOption = async (questionId: string) => {
@@ -71,44 +64,26 @@ export default function QuestionEditor({ index, data }: Props) {
     setOptions((prev) => [...prev, newOption]);
 
     const supabase = createClient();
-    const { data, error } = await supabase
-      .from("options")
-      .insert([newOption])
-      .select();
+    const { error } = await supabase.from("options").insert([newOption]);
 
     if (error) {
       console.error("Error creating option", error);
       setOptions((prev) => prev.filter((o) => o.id !== newOption.id));
     }
-
-    if (data) {
-      
-    }
   };
 
   const deleteOption = async (optionId: string, questionId: string) => {
-    const optionToDelete: Option | null | undefined = options.find(
-      (o) => o.id === optionId
-    );
-
-    // Filtra la pregunta a eliminar
-    const tempOptions = options.filter((o) => o.id !== optionId);
-    setOptions(tempOptions);
+    setOptions((prev) => prev.filter((o) => o.id !== optionId));
 
     const supabase = createClient();
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from("options")
       .delete()
-      .eq("id", optionId)
-      .select();
+      .eq("id", optionId);
 
     if (error) {
       console.error("Error deleting option", error);
       getOptions(questionId);
-    }
-
-    if (data) {
-      
     }
   };
 
@@ -118,38 +93,20 @@ export default function QuestionEditor({ index, data }: Props) {
     value: any,
     questionId: string
   ) => {
-    const optionToUpdate: Option | null | undefined = options.find(
-      (o) => o.id === optionId
+    setOptions((prev) =>
+      prev.map((o) => (o.id === optionId ? { ...o, [key]: value } : o))
     );
-
-    if (!optionToUpdate) return;
-
-    const newOptions = options.map((o) =>
-      o.id === optionId
-        ? {
-            ...o,
-            [key]: value,
-          }
-        : o
-    );
-
-    setOptions(newOptions);
     setSaving(true);
 
     const supabase = createClient();
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from("options")
       .update({ [key]: value })
-      .eq("id", optionId)
-      .select();
+      .eq("id", optionId);
 
     if (error) {
       console.error("Error updating option", error);
       getOptions(questionId);
-    }
-
-    if (data) {
-      
     }
 
     setSaving(false);
@@ -164,7 +121,11 @@ export default function QuestionEditor({ index, data }: Props) {
   useEffect(() => {
     setOptions((prev) => {
       const existingOptions = prev.filter((o) => o.questionId === data.id);
-      const newOptions = generatedOptions.filter((o) => o.questionId === data.id && !existingOptions.some(eo => eo.id === o.id));
+      const newOptions = generatedOptions.filter(
+        (o) =>
+          o.questionId === data.id &&
+          !existingOptions.some((eo) => eo.id === o.id)
+      );
       return [...prev, ...newOptions];
     });
   }, [generatedOptions]);
@@ -175,10 +136,12 @@ export default function QuestionEditor({ index, data }: Props) {
     }
   }, [debouncedQuestionData]);
 
+  useEffect(() => {
+    console.log(data.correctAnswer);
+  }, [data]);
+
   return (
-    <div
-      className={`w-full p-4 rounded-lg border bg-background flex flex-col gap-2 transition duration-300 `}
-    >
+    <div className="w-full p-4 rounded-lg border bg-background flex flex-col gap-2 transition duration-300">
       <div className="w-full flex gap-2">
         <Textarea
           placeholder="Pregunta"
@@ -189,8 +152,7 @@ export default function QuestionEditor({ index, data }: Props) {
           className="text-xl font-bold border-0 focus:border-2 resize-none"
         />
 
-        {/* <Select
-          disabled
+        <Select
           value={data.type}
           onValueChange={(e) => {
             updateQuestion(data.id, "type", e);
@@ -201,15 +163,14 @@ export default function QuestionEditor({ index, data }: Props) {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="multiple">Selección múltiple</SelectItem>
-            <SelectItem value="trufalse">Verdadero o falso</SelectItem>
             <SelectItem value="open">Respuesta abierta</SelectItem>
           </SelectContent>
-        </Select> */}
+        </Select>
 
         <div>
           <Button
-            variant={"ghost"}
-            size={"icon"}
+            variant="ghost"
+            size="icon"
             onClick={() => {
               deleteQuestion(data.id);
             }}
@@ -248,7 +209,7 @@ export default function QuestionEditor({ index, data }: Props) {
             </div>
             <div className="">
               <Button
-                variant={"default"}
+                variant="default"
                 onClick={() => {
                   createOption(data.id);
                 }}
@@ -256,6 +217,19 @@ export default function QuestionEditor({ index, data }: Props) {
                 Agregar opción
               </Button>
             </div>
+          </div>
+        )}
+
+        {data.type === "open" && (
+          <div className="flex flex-col gap-4">
+            <Textarea
+              placeholder="Respuesta modelo (opcional)"
+              value={data.correctAnswer}
+              onChange={(e) => {
+                updateQuestion(data.id, "correctAnswer", e.target.value);
+              }}
+              className="resize-none"
+            />
           </div>
         )}
       </div>

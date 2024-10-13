@@ -55,9 +55,12 @@ export default function AnswerEditor({
           className="border-0 outline-0 ring-0 p-0 h-fit rounded"
         />
 
-        <Button variant={"ghost"} onClick={() => {
-          deleteOption(option.id, question.id);
-        }}>
+        <Button
+          variant={"ghost"}
+          onClick={() => {
+            deleteOption(option.id, question.id);
+          }}
+        >
           <IconX size={20} />
         </Button>
       </div>

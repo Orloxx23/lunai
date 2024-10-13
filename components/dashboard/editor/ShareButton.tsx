@@ -22,19 +22,18 @@ import {
   IconLockOpen2,
 } from "@tabler/icons-react";
 import { toast } from "sonner";
+import { QRCodeSVG } from "qrcode.react";
+import { useEditor } from "@/context/EditorContext";
 
-interface Props {
-  quiz: Quiz;
-}
-
-export default function ShareButton({ quiz }: Props) {
+export default function ShareButton() {
   const [quizLink, setQuizLink] = useState("");
+  const { quiz } = useEditor();
 
   useEffect(() => {
     if (typeof window !== "undefined") {
-      setQuizLink(`${window.location.origin}/reply/${quiz.id}`);
+      setQuizLink(`${window.location.origin}/reply/${quiz?.id}`);
     }
-  }, [quiz.id]);
+  }, [quiz?.id]);
 
   return (
     <AlertDialog>
@@ -51,23 +50,23 @@ export default function ShareButton({ quiz }: Props) {
         <div className="flex flex-col gap-4">
           <div className="flex gap-1 items-start justify-start p-2 bg-muted rounded-lg">
             <div className="">
-              {quiz.state === "privateWithLink" && (
+              {quiz?.state === "exclusive" && (
                 <IconKey size={24} className="text-primary" />
               )}
-              {quiz.state === "private" && (
+              {quiz?.state === "private" && (
                 <IconLock size={24} className="text-primary" />
               )}
-              {quiz.state === "public" && (
+              {quiz?.state === "public" && (
                 <IconLockOpen size={24} className="text-primary" />
               )}
             </div>
 
             <p className="text-sm">
-              {quiz.state === "privateWithLink" &&
-                "Tu cuestionario es privado, solo pueden responderlo las personas con el enlace."}
-              {quiz.state === "private" &&
-                "Tu cuestionario esta en privado. Cambialo a público o privado con enlace para que puedan acceder a el."}
-              {quiz.state === "public" &&
+              {quiz?.state === "exclusive" &&
+                "Tu cuestionario es excluvo, solo pueden responderlo las personas con el enlace."}
+              {quiz?.state === "private" &&
+                "Tu cuestionario esta en privado. Cambialo a público o exclusivo para que puedan acceder a el."}
+              {quiz?.state === "public" &&
                 "Tu cuestionario es público, cualquiera podrá verlo o copiarlo."}
             </p>
           </div>
@@ -83,6 +82,9 @@ export default function ShareButton({ quiz }: Props) {
               });
             }}
           />
+          <div className="flex items-center justify-center">
+            <QRCodeSVG value={quizLink} size={256} />
+          </div>
         </div>
         <AlertDialogFooter>
           <AlertDialogCancel>Cancelar</AlertDialogCancel>

@@ -16,23 +16,24 @@ export type Quiz = {
   updatedAt?: string;
   authorId?: string;
   isPublic: boolean;
-  state: "public" | "private" | "privateWithLink";
+  state: "public" | "private" | "exclusive";
 };
 
 export type Question = {
   id: string;
   title: string;
   description: string;
-  type: "multiple" | "trufalse" | "open";
+  type: "multiple" | "open";
   quizId: string;
   createdAt?: string;
+  correctAnswer?: string;
 };
 
 export type Option = {
   id: string;
   title: string;
   description: string;
-  isCorrect: boolean;
+  isCorrect?: boolean;
   questionId: string;
   createdAt?: string;
 };

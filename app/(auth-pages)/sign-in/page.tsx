@@ -10,6 +10,11 @@ import Link from "next/link";
 import React from "react";
 
 export default function Login({ searchParams }: { searchParams: Message }) {
+
+  const handleLogin = async () => {
+    
+  }
+
   return (
     <div className="w-full lg:grid lg:min-h-[100svh] lg:grid-cols-2 xl:min-h-[100svh]">
       <div className="flex items-center justify-center py-12">
