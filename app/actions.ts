@@ -16,7 +16,8 @@ export const signUpAction = async (formData: FormData) => {
     return { error: "Email and password are required" };
   }
 
-  const { error } = await supabase.auth.signUp({
+  // Intentar registrar al usuario en Supabase Auth
+  const { data, error: signUpError } = await supabase.auth.signUp({
     email,
     password,
     options: {
@@ -24,30 +25,44 @@ export const signUpAction = async (formData: FormData) => {
     },
   });
 
-  if (error) {
-    console.error(error.code + " " + error.message);
-    return encodedRedirect("error", "/sign-up", error.message);
-  } else {
-    const { error } = await supabase.from("users").insert([
-      {
-        email: email,
-        username: username,
-        avatar:
-          "https://static.vecteezy.com/system/resources/previews/014/170/492/non_2x/pop-art-style-male-avatar-unique-abstract-vector.jpg",
-      },
-    ]);
+  if (signUpError) {
+    console.error(signUpError.code + " " + signUpError.message);
+    return encodedRedirect("error", "/sign-up", signUpError.message);
+  }
 
-    if (error) {
-      console.error(error.code + " " + error.message);
-      return encodedRedirect("error", "/sign-up", error.message);
-    }
+  // Si el registro fue exitoso, obtén el user ID
+  const userId = data?.user?.id;
 
+  if (!userId) {
     return encodedRedirect(
-      "success",
+      "error",
       "/sign-up",
-      "Thanks for signing up! Please check your email for a verification link."
+      "There was an issue creating your account."
     );
   }
+
+  // Intentar insertar el usuario en la tabla personalizada `users`
+  const { error: dbError } = await supabase.from("users").insert([
+    {
+      id: userId, // Usar el mismo ID que el generado por supabase.auth
+      email: email,
+      username: username,
+      avatar:
+        "https://static.vecteezy.com/system/resources/previews/014/170/492/non_2x/pop-art-style-male-avatar-unique-abstract-vector.jpg",
+    },
+  ]);
+
+  if (dbError) {
+    console.error(dbError.code + " " + dbError.message);
+    return encodedRedirect("error", "/sign-up", dbError.message);
+  }
+
+  // Redireccionar si todo fue exitoso
+  return encodedRedirect(
+    "success",
+    "/sign-up",
+    "Thanks for signing up! Please check your email for a verification link."
+  );
 };
 
 export const signInAction = async (formData: FormData) => {

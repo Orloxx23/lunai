@@ -50,9 +50,15 @@ export default function QuizForm({ quiz, questions, options, user }: Props) {
     },
   });
 
-  function onSubmit(values: FormValues) {
+  async function onSubmit(values: FormValues) {
     console.log(values);
-    // Handle form submission logic here
+    const res = await fetch(`/api/get-result`, {
+      method: "POST",
+      body: JSON.stringify({ ...values, quizId: quiz.id }),
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
   }
 
   const renderQuestionInput = (question: Question, field: any) => {

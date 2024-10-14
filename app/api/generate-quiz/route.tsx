@@ -1,11 +1,24 @@
 import { openai } from "@ai-sdk/openai";
 import { streamObject } from "ai";
 import { questionSchema } from "./quizSchemas";
+import { createClient } from "@/utils/supabase/server";
 
 // Allow streaming responses up to 30 seconds
 export const maxDuration = 30;
 
 export async function POST(req: Request) {
+  const supabase = createClient();
+  const auth = await supabase.auth.getUser();
+
+  const user = auth.data.user;
+
+  if (!user) {
+    return Response.json(
+      { error: "You must be logged in to submit a quiz" },
+      { status: 401 }
+    );
+  }
+
   const { amount, context, difficulty } = await req.json();
 
   const result = await streamObject({

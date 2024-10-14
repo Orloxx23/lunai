@@ -326,9 +326,9 @@ const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
 
     return () => {
       // setQuestions([]);
-      setQuestionsGeted(false);
+      // setQuestionsGeted(false);
     };
-  }, [quiz]);
+  }, [quiz, questionsGeted]);
 
   useEffect(() => {
     if (!quiz) return;
