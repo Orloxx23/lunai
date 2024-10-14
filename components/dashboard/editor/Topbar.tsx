@@ -85,7 +85,7 @@ export default function Topbar({ quiz }: Props) {
             <IconDeviceFloppy size={24} />
           )}
         </Button>
-        <ShareButton quiz={quiz} />
+        <ShareButton />
         <UserMenu />
       </div>
     </div>
