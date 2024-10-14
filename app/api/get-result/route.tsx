@@ -74,16 +74,16 @@ export async function POST(req: Request): Promise<Response> {
     .eq("email", email)
     .single();
 
-  if (userError || !user) {
+  /*if (userError || !user) {
     return new Response(JSON.stringify({ error: "User not found" }), {
       status: 404,
     });
-  }
+  }*/
 
   // Crear una nueva entrada en quiz_responses para registrar el intento del usuario
   const { data: quizResponse, error: quizResponseError } = await supabase
     .from("quiz_responses")
-    .insert({ userId: user.id, quizId: quizId, score: 0 })
+    .insert({ userId: user?.id, quizId: quizId, score: 0, email: email })
     .select("id")
     .single();
 
@@ -140,13 +140,23 @@ export async function POST(req: Request): Promise<Response> {
     );
 
     // Guardar la respuesta en question_responses
-    await supabase.from("question_responses").insert({
-      quizResponseId: quizResponse.id,
-      questionId: question.id,
-      user_answer: userAnswer,
-      is_correct: isCorrect,
-      feedback,
-    });
+    const { error: questionResponseError } = await supabase
+      .from("question_responses")
+      .insert({
+        quizResponseId: quizResponse.id,
+        questionId: question.id,
+        answer: userAnswer,
+        isCorrect: isCorrect,
+        feedback,
+      });
+
+    if (questionResponseError) {
+      console.error("Error saving question response:", questionResponseError);
+      return new Response(
+        JSON.stringify({ error: "Failed to save question response" }),
+        { status: 500 }
+      );
+    }
 
     // Almacenar el resultado en el array para el usuario
     results.push({
