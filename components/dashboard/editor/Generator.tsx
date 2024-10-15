@@ -40,6 +40,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useEditor } from "@/context/EditorContext";
+import { cn } from "@/lib/utils";
 
 export default function Generator() {
   const { generateQuestions, generating } = useEditor();
@@ -223,7 +224,7 @@ export default function Generator() {
   );
 }
 
-function PortalEffect() {
+export function PortalEffect({ className }: { className?: string }) {
   const vantaRef = useRef<HTMLDivElement | null>(null);
   const vantaEffectRef = useRef<any>(null);
 
@@ -247,7 +248,7 @@ function PortalEffect() {
           lowlightColor: 0x370032,
           baseColor: 0xd987d4,
           zoom: 2,
-          speed: 2.7
+          speed: 2.7,
         });
       }
     };
@@ -259,5 +260,7 @@ function PortalEffect() {
     };
   }, []);
 
-  return <div ref={vantaRef} className="size-full relative z-50" />;
+  return (
+    <div ref={vantaRef} className={cn("size-full relative z-50", className)} />
+  );
 }

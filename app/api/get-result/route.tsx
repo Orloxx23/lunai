@@ -41,7 +41,7 @@ async function generateGeneralFeedback(
   totalQuestions: number,
   correctAnswers: number
 ): Promise<string> {
-  const prompt = `El usuario respondió a ${totalQuestions} preguntas y acertó ${correctAnswers}. Genera un feedback general sobre el rendimiento del usuario, indicando qué áreas podría mejorar, tambien darle algunos ejemplos o información util sobre el tema, hablandole diractemenre a el. No saludes. en español. en texto plano.`;
+  const prompt = `El usuario respondió a ${totalQuestions} preguntas y acertó ${correctAnswers}. Genera un feedback general sobre el rendimiento del usuario, darle algunos ejemplos o información util sobre el tema, hablandole diractemenre a el. No saludes. en español. en texto plano. pero hazlo de manera muy resumida.`;
 
   const { text } = await generateText({
     model: openai("gpt-4o"),
