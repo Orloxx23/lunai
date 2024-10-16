@@ -34,7 +34,7 @@ async function generateFeedback(
   const prompt = `Pregunta: ${question}\nRespuesta del usuario: ${userAnswer}\n¿Es correcta?: ${isCorrect ? "Sí" : "No"}\nGenera un feedback personalizado basado en esta información. No saludes. En español. En texto plano. Háblale directamente al usuario.`;
 
   const { text } = await generateText({
-    model: openai("gpt-4o"),
+    model: openai("gpt-4o-mini"),
     prompt: prompt,
     temperature: 1,
   });
@@ -60,7 +60,7 @@ async function generateGeneralFeedback(
   const prompt = `El usuario respondió a ${totalQuestions} preguntas y acertó ${correctAnswers}. Aquí hay un resumen de las preguntas y las respuestas correctas:\n\n${questionSummaries}\n\nGenera un feedback general sobre el rendimiento del usuario, mencionando algunas de estas preguntas si es útil. No saludes, háblale directamente al usuario en español y de manera resumida. Response en markdown.`;
 
   const { text } = await generateText({
-    model: openai("gpt-4o"),
+    model: openai("gpt-4o-mini"),
     prompt: prompt,
     temperature: 1,
   });
@@ -238,7 +238,7 @@ export async function POST(req: Request): Promise<Response> {
 async function decideWithAI(question: string, userAnswer: string): Promise<boolean> {
   const prompt = `Pregunta: ${question}\nRespuesta del usuario: ${userAnswer}\nDecide si esta respuesta es correcta o no. Solo responde "correcta" o "incorrecta".`;
   const { text } = await generateText({
-    model: openai("gpt-4o"),
+    model: openai("gpt-4o-mini"),
     prompt: prompt,
     temperature: 0.7,
   });

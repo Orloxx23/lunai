@@ -2,11 +2,14 @@
 
 import { useEditor } from "@/context/EditorContext";
 import { createClient } from "@/utils/supabase/client";
+import { useRouter } from "next-nprogress-bar";
 import React, { useEffect, useState } from "react";
 
 export default function Responses({ view }: { view: string }) {
   const { quiz } = useEditor();
   const [responses, setResponses] = useState<any[]>([]);
+
+  let router = useRouter();
 
   const getResponses = async () => {
     const supabase = createClient();
@@ -24,6 +27,10 @@ export default function Responses({ view }: { view: string }) {
     if (data) {
       setResponses(data);
     }
+  };
+
+  const goToResponse = (responseId: string) => {
+    router.push(`/dashboard/editor/${quiz?.id}/review/${responseId}`);
   };
 
   useEffect(() => {
@@ -52,6 +59,7 @@ export default function Responses({ view }: { view: string }) {
           .map((response) => (
             <button
               key={response.id}
+              onClick={() => goToResponse(response.id)}
               className="p-2 bg-accent rounded-sm flex justify-between items-center"
             >
               <div>{response.email}</div>

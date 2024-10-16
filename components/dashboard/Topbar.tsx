@@ -33,7 +33,7 @@ export default function Topbar() {
 
   return (
     <div className="h-[10vh] py-4 px-8 flex items-center gap-4">
-      <Sheet>
+      {/* <Sheet>
         <SheetTrigger asChild>
           <Button size={"icon"} variant={"outline"} className="flex 2xl:hidden">
             <IconMenu2 size={24} />
@@ -66,9 +66,9 @@ export default function Topbar() {
             ))}
           </div>
         </SheetContent>
-      </Sheet>
+      </Sheet> */}
 
-      <CommandDialogSearch />
+      {/* <CommandDialogSearch /> */}
 
       <div className="flex-1"></div>
 
