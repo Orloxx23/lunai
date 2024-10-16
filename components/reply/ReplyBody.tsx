@@ -20,7 +20,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { APP_NAME } from "@/lib/constants/general";
-import { IconLoader2, IconPencil } from "@tabler/icons-react";
+import { IconCheck, IconLoader2, IconPencil, IconX } from "@tabler/icons-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -67,6 +67,7 @@ export default function QuizForm({ quiz, questions, options, user }: Props) {
   const [open, setOpen] = useState(false);
   const [result, setResult] = useState<Result | null>(null);
   const [htmlFeedback, setHtmlFeedback] = useState<string | null>(null);
+  const [finished, setFinished] = useState(false);
 
   const formSchema = z.object({
     email: z.string().email("Invalid email address"),
@@ -90,6 +91,8 @@ export default function QuizForm({ quiz, questions, options, user }: Props) {
   });
 
   async function onSubmit(values: FormValues) {
+    if (finished) return;
+
     console.log(values);
     setLoading(true);
     setOpen(true);
@@ -104,6 +107,7 @@ export default function QuizForm({ quiz, questions, options, user }: Props) {
     const data = await res.json();
     console.log("🚀 ~ onSubmit ~ data:", data);
     setResult(data);
+    setFinished(true);
 
     setLoading(false);
   }
@@ -209,18 +213,50 @@ export default function QuizForm({ quiz, questions, options, user }: Props) {
                         <FormLabel className="text-xl">
                           {question.title}
                         </FormLabel>
-                        <FormControl>
+                        <FormControl
+                          className={
+                            finished
+                              ? "pointer-events-none"
+                              : "pointer-events-auto"
+                          }
+                        >
                           {renderQuestionInput(question, field)}
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
+                  {finished && (
+                    <div className="flex flex-col gap-2">
+                      {result?.results.find((r) => r.questionId === question.id)
+                        ?.isCorrect ? (
+                        <div className="rounded-md flex gap-2 items-center p-2 bg-green-500/10">
+                          <IconCheck className="text-green-500" />
+                          <div className="text-green-500 font-medium">Correcto</div>
+                        </div>
+                      ) : (
+                        <div className="rounded-md flex gap-2 items-center p-2 bg-red-500/10">
+                          <IconX className="text-red-500" />
+                          <div className="text-red-500 font-medium">Incorrecto</div>
+                        </div>
+                      )}
+                      <div className="text-sm text-foreground p-2 bg-accent rounded-md">
+                        {result?.results.find(
+                          (r) => r.questionId === question.id
+                        )?.feedback ||
+                          (question.type === "open" && "No feedback provided")}
+                      </div>
+                    </div>
+                  )}
                 </div>
               );
             })}
 
-            <Button disabled={loading} type="submit" className="w-full">
+            <Button
+              disabled={loading || finished}
+              type="submit"
+              className="w-full"
+            >
               {loading ? <IconLoader2 className="animate-spin" /> : "Enviar"}
             </Button>
           </form>
@@ -260,12 +296,12 @@ export default function QuizForm({ quiz, questions, options, user }: Props) {
                 </>
               ) : (
                 <div className="flex flex-col gap-4 p-8 size-full justify-center items-center">
-                  <div className="text-7xl font-bold flex items-center justify-center gap-2">
-                    <Separator />
+                  <div className="text-7xl font-bold flex items-center justify-center gap-2 ">
+                    <Separator className="w-2/3" />
                     <p className="text-primary">
                       {result?.score}/{questions.length}
                     </p>
-                    <Separator />
+                    <Separator className="w-2/3" />
                   </div>
                   <div className="w-full flex-1 overflow-y-auto p-4 bg-accent rounded-md font-mono">
                     {htmlFeedback && (

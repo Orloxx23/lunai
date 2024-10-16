@@ -5,13 +5,18 @@ import { generateText } from "ai";
 type Answer = Record<string, string>;
 
 type QuestionOption = {
+  questionId: string;
   id: string;
+  title: string;
   isCorrect: boolean;
 };
 
 type Question = {
   id: string;
-  options: QuestionOption[];
+  title: string;
+  type: "multiple" | "open";
+  correctAnswer?: string; // Agregamos el campo correctAnswer
+  options?: QuestionOption[];
 };
 
 type ValidationResult = {
@@ -26,7 +31,7 @@ async function generateFeedback(
   userAnswer: string,
   isCorrect: boolean
 ): Promise<string> {
-  const prompt = `Pregunta: ${question}\nRespuesta del usuario: ${userAnswer}\n¿Es correcta?: ${isCorrect ? "Sí" : "No"}\nGenera un feedback personalizado basado en esta información. no saludes. en español. en texto plano. hablale directamente al usuario.`;
+  const prompt = `Pregunta: ${question}\nRespuesta del usuario: ${userAnswer}\n¿Es correcta?: ${isCorrect ? "Sí" : "No"}\nGenera un feedback personalizado basado en esta información. No saludes. En español. En texto plano. Háblale directamente al usuario.`;
 
   const { text } = await generateText({
     model: openai("gpt-4o"),
@@ -39,9 +44,20 @@ async function generateFeedback(
 
 async function generateGeneralFeedback(
   totalQuestions: number,
-  correctAnswers: number
+  correctAnswers: number,
+  questions: {
+    title: string;
+    options: { title: string; isCorrect: boolean }[];
+  }[]
 ): Promise<string> {
-  const prompt = `El usuario respondió a ${totalQuestions} preguntas y acertó ${correctAnswers}. Genera un feedback general sobre el rendimiento del usuario, darle algunos ejemplos o información util sobre el tema, hablandole diractemenre a el. No saludes. en español. en texto plano. pero hazlo de manera muy resumida.`;
+  const questionSummaries = questions
+    .map((q) => {
+      const correctOption = q.options.find((opt) => opt.isCorrect);
+      return `Pregunta: ${q.title}\nRespuesta correcta: ${correctOption?.title || "N/A"}`;
+    })
+    .join("\n\n");
+
+  const prompt = `El usuario respondió a ${totalQuestions} preguntas y acertó ${correctAnswers}. Aquí hay un resumen de las preguntas y las respuestas correctas:\n\n${questionSummaries}\n\nGenera un feedback general sobre el rendimiento del usuario, mencionando algunas de estas preguntas si es útil. No saludes, háblale directamente al usuario en español y de manera resumida. Response en markdown.`;
 
   const { text } = await generateText({
     model: openai("gpt-4o"),
@@ -51,6 +67,8 @@ async function generateGeneralFeedback(
 
   return text;
 }
+
+export const maxDuration = 60;
 
 export async function POST(req: Request): Promise<Response> {
   const {
@@ -67,20 +85,12 @@ export async function POST(req: Request): Promise<Response> {
 
   const supabase = createClient();
 
-  // Obtener el ID del usuario basado en el email
   const { data: user, error: userError } = await supabase
     .from("users")
     .select("id")
     .eq("email", email)
     .single();
 
-  /*if (userError || !user) {
-    return new Response(JSON.stringify({ error: "User not found" }), {
-      status: 404,
-    });
-  }*/
-
-  // Crear una nueva entrada en quiz_responses para registrar el intento del usuario
   const { data: quizResponse, error: quizResponseError } = await supabase
     .from("quiz_responses")
     .insert({ userId: user?.id, quizId: quizId, score: 0, email: email })
@@ -97,49 +107,70 @@ export async function POST(req: Request): Promise<Response> {
     );
   }
 
-  // Obtener todas las preguntas del quiz junto con sus opciones
   const { data: questions, error: questionError } = await supabase
     .from("questions")
-    .select("id, title, options(id, title, isCorrect)") // Asegúrate de seleccionar el título de la opción
+    .select("id, title, type, correctAnswer")
     .eq("quizId", quizId);
 
-  if (questionError || !questions) {
+  if (questionError || !questions || questions.length === 0) {
     return new Response(JSON.stringify({ error: "Error fetching questions" }), {
       status: 500,
     });
   }
 
-  // Procesar respuestas del usuario
+  const questionIds = questions.map((q: any) => q.id);
+  const { data: options, error: optionsError } = await supabase
+    .from("options")
+    .select("id, title, isCorrect, questionId")
+    .in("questionId", questionIds);
+
+  if (optionsError) {
+    return new Response(JSON.stringify({ error: "Error fetching options" }), {
+      status: 500,
+    });
+  }
+
   const results: ValidationResult[] = [];
-  let correctAnswersCount = 0; // Contador de respuestas correctas
+  let correctAnswersCount = 0;
 
   for (const questionId in answers) {
     const userAnswer = answers[questionId];
-    const question = questions.find((q: Question) => q.id === questionId);
+    const question = questions.find((q: any) => q.id === questionId);
 
     if (!question) {
       continue;
     }
 
-    // Buscar si la respuesta coincide con alguna opción
-    const option = question.options.find(
-      (opt: QuestionOption) => opt.id === userAnswer
-    );
-    const isCorrect = option ? option.isCorrect : false;
+    let isCorrect = false;
+    let feedback = "";
 
-    // Si la respuesta es correcta, aumentar el contador
-    if (isCorrect) {
-      correctAnswersCount++;
+    if (question.type === "multiple") {
+      const questionOptions = options.filter(
+        (opt: QuestionOption) => opt.questionId === questionId
+      );
+      const option = questionOptions.find(
+        (opt: QuestionOption) => opt.id === userAnswer
+      );
+
+      isCorrect = option ? option.isCorrect : false;
+      feedback = await generateFeedback(
+        question.title,
+        option ? option.title : userAnswer,
+        isCorrect
+      );
+    } else if (question.type === "open") {
+      if (question.correctAnswer) {
+        isCorrect =
+          userAnswer.trim().toLowerCase() ===
+          question.correctAnswer.trim().toLowerCase();
+      } else {
+        // Si no hay una respuesta correcta definida, dejamos que la IA decida
+        isCorrect = await decideWithAI(question.title, userAnswer);
+      }
+
+      feedback = await generateFeedback(question.title, userAnswer, isCorrect);
     }
 
-    // Generar feedback con IA para la pregunta usando el título de la opción en vez del ID
-    const feedback = await generateFeedback(
-      question.title, // Título de la pregunta
-      option ? option.title : userAnswer, // Título de la opción seleccionada
-      isCorrect
-    );
-
-    // Guardar la respuesta en question_responses
     const { error: questionResponseError } = await supabase
       .from("question_responses")
       .insert({
@@ -158,25 +189,36 @@ export async function POST(req: Request): Promise<Response> {
       );
     }
 
-    // Almacenar el resultado en el array para el usuario
     results.push({
       questionId: question.id,
       userAnswer,
       isCorrect,
       feedback,
     });
+
+    if (isCorrect) correctAnswersCount++;
   }
 
-  // Generar feedback general
   const generalFeedback = await generateGeneralFeedback(
     questions.length,
-    correctAnswersCount
+    correctAnswersCount,
+    questions.map((q: any) => {
+      const questionOptions = options.filter(
+        (opt: QuestionOption) => opt.questionId === q.id
+      );
+      return {
+        title: q.title,
+        options: questionOptions.map((opt: QuestionOption) => ({
+          title: opt.title,
+          isCorrect: opt.isCorrect,
+        })),
+      };
+    })
   );
 
-  // Actualizar el score y feedback general en quiz_responses
   const { error: updateError } = await supabase
     .from("quiz_responses")
-    .update({ score: correctAnswersCount, feedback: generalFeedback }) // Asegúrate de que la tabla tenga una columna "feedback"
+    .update({ score: correctAnswersCount, feedback: generalFeedback })
     .eq("id", quizResponse.id);
 
   if (updateError) {
@@ -191,4 +233,15 @@ export async function POST(req: Request): Promise<Response> {
       generalFeedback,
     })
   );
+}
+
+async function decideWithAI(question: string, userAnswer: string): Promise<boolean> {
+  const prompt = `Pregunta: ${question}\nRespuesta del usuario: ${userAnswer}\nDecide si esta respuesta es correcta o no. Solo responde "correcta" o "incorrecta".`;
+  const { text } = await generateText({
+    model: openai("gpt-4o"),
+    prompt: prompt,
+    temperature: 0.7,
+  });
+
+  return text.trim().toLowerCase() === "correcta";
 }
