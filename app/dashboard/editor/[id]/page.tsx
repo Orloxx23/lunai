@@ -73,7 +73,7 @@ export default async function Editor({ params }: { params: { id: string } }) {
 function renderEditor(quizData: any) {
   return (
     <div className="flex flex-col w-full min-h-screen bg-accent">
-      <Topbar quiz={quizData} />
+      <Topbar />
       <div className="w-full min-h-[93vh] bg-accent p-4 pt-[calc(7vh+1rem)]">
         <EditorBody quiz={quizData} />
       </div>

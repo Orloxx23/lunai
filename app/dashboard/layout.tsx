@@ -1,3 +1,4 @@
+import Topbar from "@/components/dashboard/editor/Topbar";
 import { EditorProvider } from "@/context/EditorContext";
 import React from "react";
 

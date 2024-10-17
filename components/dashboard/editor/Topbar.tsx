@@ -24,12 +24,9 @@ import { Quiz } from "@/lib/types/editorTypes";
 import ShareButton from "./ShareButton";
 import StateButton from "./StateButton";
 
-interface Props {
-  quiz: Quiz;
-}
-
-export default function Topbar({ quiz }: Props) {
+export default function Topbar() {
   const {
+    quiz,
     saving,
     updateQuiz,
     saveQuiz,
@@ -67,12 +64,16 @@ export default function Topbar({ quiz }: Props) {
 
       <div className="flex items-center gap-2">
         <Generator />
-        <Button size={"icon"} variant={"ghost"} onClick={() => {
-          window.open(`/reply/${quiz.id}`, "_blank");
-        }}>
+        <Button
+          size={"icon"}
+          variant={"ghost"}
+          onClick={() => {
+            window.open(`/reply/${quiz?.id}`, "_blank");
+          }}
+        >
           <IconEye size={24} />
         </Button>
-        <StateButton quiz={quiz} />
+        <StateButton />
         <Button
           variant={"ghost"}
           size={"icon"}

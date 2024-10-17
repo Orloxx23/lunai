@@ -41,7 +41,7 @@ const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
   let router = useRouter();
   let pathname = usePathname();
 
-  const [quiz, setQuiz] = useState<Quiz | null>({
+  const [quiz, setQuiz] = useState<Quiz>({
     id: "",
     name: "",
     title: "",
@@ -59,7 +59,6 @@ const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
   const debouncedQuiz = useDebounced(quiz, 700);
   const updateQuiz = (key: keyof Quiz, value: any) => {
     setQuiz((prev) => {
-      if (!prev) return null;
       return {
         ...prev,
         [key]: value,
@@ -88,7 +87,6 @@ const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
 
     if (data) {
       setQuiz((prev) => {
-        if (!prev) return null;
         return {
           ...prev,
           id: data[0].id,

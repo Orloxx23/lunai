@@ -19,13 +19,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-interface Props {
-  quiz: Quiz;
-}
-
-export default function StateButton({ quiz }: Props) {
-  const { updateQuiz } = useEditor();
-  const [state, setState] = useState(quiz.state);
+export default function StateButton() {
+  const { quiz, updateQuiz } = useEditor();
+  const [state, setState] = useState(quiz?.state);
   const [hightlight, setHightlight] = useState(false);
 
   return (
