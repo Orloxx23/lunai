@@ -239,80 +239,18 @@ export default function ReviewPage({
               </SelectContent>
             </Select>
 
-            <FeedbackTextarea
-              questionId={question.id}
-              quizResponseId={params.responseId}
-              initialFeedback={question.userAnswerData?.feedback}
-              loadingChanges={loadingChanges}
-              setLoadingChanges={setLoadingChanges}
-            />
+            <div className="w-full relative">
+              <textarea
+                disabled={true}
+                className="text-sm text-foreground p-2 bg-accent rounded-md w-full resize-none"
+                value={question.userAnswerData?.feedback}
+                placeholder="Escribe retroalimentación aquí..."
+                rows={5}
+              />
+            </div>
           </div>
         ))}
       </div>
     </>
   );
 }
-
-interface FeedbackTextareaProps {
-  questionId: any;
-  quizResponseId: string;
-  initialFeedback?: string;
-  loadingChanges?: boolean;
-  setLoadingChanges: (loading: boolean) => void;
-}
-
-export const FeedbackTextarea: React.FC<FeedbackTextareaProps> = ({
-  questionId,
-  quizResponseId,
-  initialFeedback = "",
-  loadingChanges = false,
-  setLoadingChanges,
-}) => {
-  const supabase = createClient();
-  const [feedback, setFeedback] = useState(initialFeedback);
-  const debouncedFeedback = useDebounced(feedback, 500);
-
-  useEffect(() => {
-    const updateFeedback = async () => {
-      if (
-        debouncedFeedback !== undefined &&
-        debouncedFeedback !== initialFeedback
-      ) {
-        setLoadingChanges(true);
-        const { error } = await supabase
-          .from("question_responses")
-          .update({ feedback: debouncedFeedback })
-          .eq("questionId", questionId)
-          .eq("quizResponseId", quizResponseId);
-
-        if (error) {
-          console.error(error);
-          // En caso de error, considerar mostrar un mensaje de error o revertir el estado
-          setLoadingChanges(false);
-        }
-        setLoadingChanges(false);
-      }
-    };
-
-    updateFeedback();
-  }, [
-    debouncedFeedback,
-    questionId,
-    quizResponseId,
-    initialFeedback,
-    supabase,
-  ]);
-
-  return (
-    <div className="w-full relative">
-      <textarea
-        disabled={loadingChanges}
-        className="text-sm text-foreground p-2 bg-accent rounded-md w-full resize-none"
-        value={feedback}
-        onChange={(e) => setFeedback(e.target.value)}
-        placeholder="Escribe retroalimentación aquí..."
-        rows={5}
-      />
-    </div>
-  );
-};
