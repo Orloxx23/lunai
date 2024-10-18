@@ -154,7 +154,7 @@ export default function Generator() {
                         name="difficulty"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Email</FormLabel>
+                            <FormLabel>Dificultad</FormLabel>
                             <Select
                               onValueChange={field.onChange}
                               defaultValue={field.value}
