@@ -24,16 +24,19 @@ import { createClient } from "@/utils/supabase/client";
 
 interface Props {
   quiz: Quiz;
-  deleteQuiz: (id: string) => void;
+  response: any;
 }
 
-export default function QuizCard({ quiz, deleteQuiz }: Props) {
+export default function ReponseCard({ response, quiz }: Props) {
   let router = useRouter();
   const [loading, setLoading] = useState(false);
 
+  const _response = response.response;
+  console.log("🚀 ~ ReponseCard ~ _response:", _response)
+
   const handleClick = () => {
     setLoading(true);
-    router.push(`/dashboard/editor/${quiz.id}`);
+    router.push(`/dashboard/review/${_response.id}`);
     setTimeout(() => {
       setLoading(false);
     }, 2000);
@@ -55,12 +58,12 @@ export default function QuizCard({ quiz, deleteQuiz }: Props) {
       </div>
       <div className="p-4 h-1/3 bg-background w-full border-t border-border flex justify-between items-center gap-2">
         <div className="flex flex-col items-start justify-start truncate">
-          <h1 className="text-sm font-bold truncate">{quiz?.name}</h1>
+          <h1 className="text-sm font-bold truncate">{_response.quizzes.name}</h1>
           <p className="text-sm text-muted-foreground truncate">
-            {DateTime.fromISO(quiz?.createdAt || "").toFormat("LLL dd, yyyy")}
+            {DateTime.fromISO(_response.createdAt || "").toFormat("LLL dd, yyyy")}
           </p>
         </div>
-        <div className="">
+        {/* <div className="">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon">
@@ -71,14 +74,14 @@ export default function QuizCard({ quiz, deleteQuiz }: Props) {
               <DropdownMenuItem
                 onClick={(e) => {
                   e.stopPropagation();
-                  deleteQuiz(quiz.id);
+                  
                 }}
               >
                 Eliminar
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-        </div>
+        </div> */}
       </div>
     </button>
   );

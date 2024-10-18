@@ -188,7 +188,7 @@ export default function ReviewPage({
                   <p className="text-sm text-muted-foreground">
                     {DateTime.fromISO(userData.createdAt)
                       .setLocale("es")
-                      .toRelative()}
+                      .toLocaleString(DateTime.DATETIME_MED)}
                   </p>
                 </div>
               </div>

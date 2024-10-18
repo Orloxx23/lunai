@@ -1,16 +1,23 @@
 "use client";
 
 import QuizCard from "@/components/dashboard/library/QuizCard";
+import ReponseCard from "@/components/dashboard/library/ReponsesCard";
+import { Button } from "@/components/ui/button";
+import { useEditor } from "@/context/EditorContext";
 import { Quiz } from "@/lib/types/editorTypes";
 import { createClient } from "@/utils/supabase/client";
-import { IconMoonFilled } from "@tabler/icons-react";
+import { IconLoader2, IconMoonFilled, IconPlus } from "@tabler/icons-react";
 import React, { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 export default function LibraryPage() {
+  const { createQuiz, creating } = useEditor();
+
   const [loading, setLoading] = useState(true);
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
   const [deleting, setDeleting] = useState(false);
+
+  const [responses, setResponses] = useState<any>([]);
 
   const getQuizzes = async () => {
     const supabase = createClient();
@@ -21,7 +28,8 @@ export default function LibraryPage() {
     let { data: quizzes, error } = await supabase
       .from("quizzes")
       .select("*")
-      .eq("authorId", userId);
+      .eq("authorId", userId)
+      .order("createdAt", { ascending: false });
 
     if (error) {
       console.error("Error fetching quizzes", error);
@@ -44,10 +52,7 @@ export default function LibraryPage() {
     setQuizzes(newQuizzes);
 
     const supabase = createClient();
-    const { error } = await supabase
-      .from("quizzes")
-      .delete()
-      .eq("id", id);
+    const { error } = await supabase.from("quizzes").delete().eq("id", id);
 
     if (error) {
       console.error("Error deleting quiz", error);
@@ -65,24 +70,94 @@ export default function LibraryPage() {
     }, 2000);
   };
 
+  const getQuizzesResponses = async () => {
+    try {
+      const supabase = createClient();
+      const auth = await supabase.auth.getUser();
+      const userId = auth.data.user?.id;
+
+      // Obtener todas las respuestas del usuario junto con los datos del cuestionario
+      let { data: quizResponses, error } = await supabase
+        .from("quiz_responses")
+        .select("*, quizzes(*)") // Asumimos que existe una relación con la tabla quizzes
+        .eq("userId", userId)
+        .order("createdAt", { ascending: false });
+
+      if (error) {
+        console.error("Error fetching quiz responses: ", error);
+        return;
+      }
+
+      if (quizResponses) {
+        setResponses(
+          quizResponses.map((response: any) => ({
+            response, // Respuesta del usuario
+          }))
+        );
+      }
+    } catch (err) {
+      console.error("Unexpected error: ", err);
+    }
+  };
+
   useEffect(() => {
     getQuizzes();
+    getQuizzesResponses();
   }, []);
 
   return (
     <div className="size-full">
-      <div className="w-full max-w-7xl mx-auto h-full py-4">
-        <div className="w-full grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-          {loading
-            ? Array.from({ length: 12 }).map((_, index) => (
+      <div className="w-full max-w-7xl mx-auto h-full py-4 flex flex-col gap-8">
+        <div className="flex flex-col gap-0">
+          <p className="font-bold text-xl px-2">Mis Cuestionatios</p>
+          <div className="w-full flex gap-4 overflow-x-auto py-4 px-2">
+            <Button
+              disabled={creating || loading}
+              variant={"default"}
+              onClick={createQuiz}
+              className="min-w-52 w-52 h-64"
+            >
+              {creating ? (
+                <IconLoader2 size={32} className="animate-spin" />
+              ) : (
+                <IconPlus size={32} />
+              )}
+            </Button>
+
+            {loading
+              ? Array.from({ length: 12 }).map((_, index) => (
+                  <div
+                    key={index}
+                    className="min-w-52 w-52 h-64 flex flex-col rounded-md overflow-hidden bg-background opacity-30 animate-pulse"
+                  ></div>
+                ))
+              : quizzes.map((quiz, index) => (
+                  <QuizCard key={quiz.id} quiz={quiz} deleteQuiz={deleteQuiz} />
+                ))}
+          </div>
+        </div>
+        <div className="flex flex-col gap-0">
+          <p className="font-bold text-xl px-2">Mis respuestas</p>
+          <div className="w-full flex gap-4 overflow-x-auto py-4 px-2">
+            {loading ? (
+              Array.from({ length: 12 }).map((_, index) => (
                 <div
                   key={index}
-                  className="aspect-[9/10.5] flex flex-col rounded-md overflow-hidden bg-background opacity-30 animate-pulse"
+                  className="min-w-52 w-52 h-64 flex flex-col rounded-md overflow-hidden bg-background opacity-30 animate-pulse"
                 ></div>
               ))
-            : quizzes.map((quiz, index) => (
-                <QuizCard key={quiz.id} quiz={quiz} deleteQuiz={deleteQuiz} />
-              ))}
+            ) : responses.length > 0 ? (
+              responses.map((response: any, index: number) => (
+                <ReponseCard
+                  key={response.id}
+                  response={response}
+                  quiz={{} as Quiz}
+                />
+              ))
+            ) : (
+              <p className="text-muted-foreground">No hay respuestas</p>
+            )}
+          </div>
         </div>
       </div>
     </div>

@@ -190,7 +190,7 @@ export default function QuizForm({ quiz, questions, options, user }: Props) {
                       <Input
                         placeholder="Email"
                         {...field}
-                        disabled={user !== null}
+                        disabled={user !== null || finished}
                       />
                     </FormControl>
                     <FormMessage />
@@ -226,9 +226,9 @@ export default function QuizForm({ quiz, questions, options, user }: Props) {
                       </FormItem>
                     )}
                   />
-                  {finished && (
+                  {finished && !loading && result && (
                     <div className="flex flex-col gap-2">
-                      {result?.results.find((r) => r.questionId === question.id)
+                      {result?.results?.find((r) => r.questionId === question.id)
                         ?.isCorrect ? (
                         <div className="rounded-md flex gap-2 items-center p-2 bg-green-500/10">
                           <IconCheck className="text-green-500" />
@@ -241,7 +241,7 @@ export default function QuizForm({ quiz, questions, options, user }: Props) {
                         </div>
                       )}
                       <div className="text-sm text-foreground p-2 bg-accent rounded-md">
-                        {result?.results.find(
+                        {result?.results?.find(
                           (r) => r.questionId === question.id
                         )?.feedback ||
                           (question.type === "open" && "No feedback provided")}
@@ -253,7 +253,7 @@ export default function QuizForm({ quiz, questions, options, user }: Props) {
             })}
 
             <Button
-              disabled={loading || finished}
+              disabled={loading || finished || !user}
               type="submit"
               className="w-full"
             >

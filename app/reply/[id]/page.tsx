@@ -4,7 +4,19 @@ import { Option, Question, Quiz } from "@/lib/types/editorTypes";
 import { createClient } from "@/utils/supabase/server";
 import { Metadata, ResolvingMetadata } from "next";
 import { redirect } from "next/navigation";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import React from "react";
+import Link from "next/link";
 
 type Props = {
   params: { id: string };
@@ -84,6 +96,26 @@ export default async function ReplyPage({
         options={options}
         user={user}
       />
+
+      <AlertDialog open={!user}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              Parece que no has iniciado sesión 😅
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Inicia sesión para poder responder a el cuestionario
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction asChild>
+              <Link href="/sign-in">
+                <span>Iniciar sesión</span>
+              </Link>
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
