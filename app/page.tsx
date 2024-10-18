@@ -40,20 +40,6 @@ export default function Index() {
             <p className="text-center">Cuestionarios que evolucionan con tu aprendizaje</p>
           </div>
         </section>
-
-        <section className="text-center">
-          <h2 className="text-2xl font-semibold mb-4 text-foreground">Únete a la comunidad de buscadores de conocimiento</h2>
-          <form className="flex flex-col sm:flex-row justify-center items-center gap-4">
-            <Input
-              type="email"
-              placeholder="Tu correo electrónico"
-              className="w-full sm:w-64 bg-gray-800 text-white border-primary focus:border-primary/50"
-            />
-            <Button type="submit" className="w-full sm:w-auto bg-primary text-white">
-              Suscríbete
-            </Button>
-          </form>
-        </section>
       </main>
 
       <footer className="mt-16 text-center text-sm text-gray-500">
