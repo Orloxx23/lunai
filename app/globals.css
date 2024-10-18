@@ -460,3 +460,7 @@
       83px 10px 0 var(--key);
   }
 }
+
+* {
+  scroll-behavior: smooth;
+}

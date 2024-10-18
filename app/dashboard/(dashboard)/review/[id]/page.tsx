@@ -164,7 +164,7 @@ export default function ReviewPage({ params }: { params: { id: string } }) {
               <textarea
                 disabled
                 className="text-sm text-foreground p-2 bg-accent rounded-md w-full resize-none"
-                value={question.userAnswerData.feedback || ""}
+                value={question?.userAnswerData?.feedback || ""}
                 placeholder="Sin retroalimentación"
                 rows={5}
               />

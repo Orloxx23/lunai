@@ -15,6 +15,24 @@ export const metadata = {
   metadataBase: new URL(defaultUrl),
   title: `${APP_NAME}: El Poder del Conocimiento con Inteligencia Artificial`,
   description: `Descubre ${APP_NAME}, una innovadora plataforma de inteligencia artificial diseñada para iluminar tu camino hacia el conocimiento. Inspirada en la sabiduría de la luna, ${APP_NAME} combina tecnología avanzada con una experiencia intuitiva, ayudándote a explorar nuevas ideas y obtener respuestas claras. Con un enfoque único en el aprendizaje profundo y la conexión de datos, ${APP_NAME} te acompaña en tu viaje hacia la comprensión. ¡Potencia tu curiosidad con ${APP_NAME}!`,
+  image: "/og.webp",
+  openGraph: {
+    title: '¡Descubre "El Poder del Conocimiento con Inteligencia Artificial"!',
+    description:
+      "Descubre una innovadora plataforma de inteligencia artificial diseñada para iluminar tu camino hacia el conocimiento.",
+    type: "website",
+    locale: "es_ES",
+    url: defaultUrl,
+    site_name: APP_NAME,
+    images: [
+      {
+        url: "/og.webp",
+        width: 690,
+        height: 640,
+        alt: "¡Descubre 'El Poder del Conocimiento con Inteligencia Artificial'!",
+      },
+    ],
+  },
 };
 
 export default function RootLayout({
