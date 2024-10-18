@@ -40,7 +40,7 @@ export default function EditorBody({ quiz }: Props) {
           }}
           className="w-full"
         >
-          Responses
+          Respuestas
         </Button>
       </div>
 

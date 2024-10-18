@@ -7,7 +7,7 @@ import { createClient } from "@/utils/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DateTime } from "luxon";
 import { useEditor } from "@/context/EditorContext";
-import { IconArrowLeft } from "@tabler/icons-react";
+import { IconArrowLeft, IconCheck, IconX } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next-nprogress-bar";
 import Topbar from "@/components/dashboard/editor/Topbar";
@@ -148,7 +148,17 @@ export default function ReviewPage({ params }: { params: { id: string } }) {
               )}
             </RadioGroup>
             <p className="text-sm text-foreground">
-              {question.userAnswerData.isCorrect ? "Correcto" : "Incorrecto"}
+              {question?.userAnswerData?.isCorrect ? (
+                <div className="rounded-md flex gap-2 items-center p-2 bg-green-500/10">
+                  <IconCheck className="text-green-500" />
+                  <div className="text-green-500 font-medium">Correcto</div>
+                </div>
+              ) : (
+                <div className="rounded-md flex gap-2 items-center p-2 bg-red-500/10">
+                  <IconX className="text-red-500" />
+                  <div className="text-red-500 font-medium">Incorrecto</div>
+                </div>
+              )}
             </p>
             <div className="w-full relative">
               <textarea
