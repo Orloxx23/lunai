@@ -1,15 +1,15 @@
 import { forgotPasswordAction } from "@/app/actions";
-import { FormMessage } from "@/components/form-message";
+import { FormMessage, Message } from "@/components/form-message";
 import { SubmitButton } from "@/components/submit-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
 import React from "react";
 
-export default async function ForgotPassword({
+export default function ForgotPassword({
   searchParams,
 }: {
-  searchParams: { success: string };
+  searchParams: Message;
 }) {
   return (
     <>
