@@ -1,6 +1,7 @@
 import { createClient } from "@/utils/supabase/server";
 import { openai } from "@ai-sdk/openai";
-import { generateText } from "ai";
+import { generateText, generateObject } from "ai";
+import { z } from "zod";
 
 type Answer = Record<string, string>;
 
@@ -26,47 +27,17 @@ type ValidationResult = {
   feedback: string;
 };
 
-async function generateFeedback(
-  question: string,
-  userAnswer: string,
-  isCorrect: boolean
-): Promise<string> {
-  const prompt = `Pregunta: ${question}\nRespuesta del usuario: ${userAnswer}\n¿Es correcta?: ${isCorrect ? "Sí" : "No"}\nGenera un feedback personalizado basado en esta información. No saludes. En español. En texto plano. Háblale directamente al usuario.`;
-
-  const { text } = await generateText({
-    model: openai("gpt-4o-mini"),
-    prompt: prompt,
-    temperature: 1,
-  });
-
-  return text;
-}
-
-async function generateGeneralFeedback(
-  totalQuestions: number,
-  correctAnswers: number,
-  questions: {
-    title: string;
-    options: { title: string; isCorrect: boolean }[];
-  }[]
-): Promise<string> {
-  const questionSummaries = questions
-    .map((q) => {
-      const correctOption = q.options.find((opt) => opt.isCorrect);
-      return `Pregunta: ${q.title}\nRespuesta correcta: ${correctOption?.title || "N/A"}`;
+const feedbackSchema = z.object({
+  generalFeedback: z.string(),
+  questionFeedbacks: z.array(
+    z.object({
+      questionId: z.string(),
+      userAnswer: z.string(),
+      isCorrect: z.boolean(),
+      feedback: z.string(),
     })
-    .join("\n\n");
-
-  const prompt = `El usuario respondió a ${totalQuestions} preguntas y acertó ${correctAnswers}. Aquí hay un resumen de las preguntas y las respuestas correctas:\n\n${questionSummaries}\n\nGenera un feedback general sobre el rendimiento del usuario, mencionando algunas de estas preguntas si es útil. No saludes, háblale directamente al usuario en español y de manera resumida. Response en markdown.`;
-
-  const { text } = await generateText({
-    model: openai("gpt-4o-mini"),
-    prompt: prompt,
-    temperature: 1,
-  });
-
-  return text;
-}
+  ),
+});
 
 export const maxDuration = 60;
 
@@ -91,18 +62,9 @@ export async function POST(req: Request): Promise<Response> {
     .eq("email", email)
     .single();
 
-  const { data: quizResponse, error: quizResponseError } = await supabase
-    .from("quiz_responses")
-    .insert({ userId: user?.id, quizId: quizId, score: 0, email: email })
-    .select("id")
-    .single();
-
-  if (quizResponseError || !quizResponse) {
+  if (userError || !user) {
     return new Response(
-      JSON.stringify({
-        error: "Failed to create quiz response",
-        quizResponseError,
-      }),
+      JSON.stringify({ error: "Failed to fetch user data" }),
       { status: 500 }
     );
   }
@@ -130,118 +92,109 @@ export async function POST(req: Request): Promise<Response> {
     });
   }
 
-  const results: ValidationResult[] = [];
-  let correctAnswersCount = 0;
+  const formattedQuestions = questions.map((q) => ({
+    id: q.id,
+    title: q.title,
+    type: q.type,
+    correctAnswer: q.correctAnswer,
+    options: options
+      .filter((opt) => opt.questionId === q.id)
+      .map((opt) => ({
+        id: opt.id,
+        title: opt.title,
+        isCorrect: opt.isCorrect,
+      })),
+  }));
 
-  for (const questionId in answers) {
-    const userAnswer = answers[questionId];
-    const question = questions.find((q: any) => q.id === questionId);
+  const { object } = await generateObject({
+    model: "gpt-4o-mini",
+    schema: feedbackSchema,
+    prompt: `
+      Las siguientes son ${formattedQuestions.length} preguntas y respuestas del usuario.
+      Genera un feedback general sobre el rendimiento del usuario, junto con feedback para cada pregunta.
 
-    if (!question) {
-      continue;
-    }
+      Preguntas y respuestas:
+      ${formattedQuestions
+        .map((q) => {
+          const userAnswer = answers[q.id] || "Sin respuesta";
+          const isCorrect =
+            q.type === "multiple"
+              ? q.options.find((opt) => opt.id === userAnswer)?.isCorrect ||
+                false
+              : userAnswer.trim().toLowerCase() ===
+                (q.correctAnswer || "").trim().toLowerCase();
+          return `
+            - Pregunta: ${q.title}
+            - Respuesta del usuario: ${userAnswer}
+            - ¿Es correcta?: ${isCorrect ? "Sí" : "No"}
+          `;
+        })
+        .join("\n")}
+      Devuelve el feedback en el siguiente formato:
+      {
+        generalFeedback: string,
+        questionFeedbacks: [
+          {
+            questionId: string,
+            userAnswer: string,
+            isCorrect: boolean,
+            feedback: string
+          }
+        ]
+      }.
+    `,
+  });
 
-    let isCorrect = false;
-    let feedback = "";
+  const { generalFeedback, questionFeedbacks } = object;
 
-    if (question.type === "multiple") {
-      const questionOptions = options.filter(
-        (opt: QuestionOption) => opt.questionId === questionId
-      );
-      const option = questionOptions.find(
-        (opt: QuestionOption) => opt.id === userAnswer
-      );
+  // Guardar las respuestas y el feedback
+  const { error: quizResponseError, data: quizResponse } = await supabase
+    .from("quiz_responses")
+    .insert({
+      userId: user.id,
+      quizId: quizId,
+      score: questionFeedbacks.filter((q) => q.isCorrect).length,
+      feedback: generalFeedback,
+    })
+    .select("id")
+    .single();
 
-      isCorrect = option ? option.isCorrect : false;
-      feedback = await generateFeedback(
-        question.title,
-        option ? option.title : userAnswer,
-        isCorrect
-      );
-    } else if (question.type === "open") {
-      if (question.correctAnswer) {
-        isCorrect =
-          userAnswer.trim().toLowerCase() ===
-          question.correctAnswer.trim().toLowerCase();
-      } else {
-        // Si no hay una respuesta correcta definida, dejamos que la IA decida
-        isCorrect = await decideWithAI(question.title, userAnswer);
-      }
+  if (quizResponseError || !quizResponse) {
+    return new Response(
+      JSON.stringify({ error: "Failed to save quiz response" }),
+      { status: 500 }
+    );
+  }
 
-      feedback = await generateFeedback(question.title, userAnswer, isCorrect);
-    }
-
+  for (const feedback of questionFeedbacks) {
     const { error: questionResponseError } = await supabase
       .from("question_responses")
       .insert({
         quizResponseId: quizResponse.id,
-        questionId: question.id,
-        answer: userAnswer,
-        isCorrect: isCorrect,
-        feedback,
+        questionId: feedback.questionId,
+        answer: feedback.userAnswer,
+        isCorrect: feedback.isCorrect,
+        feedback: feedback.feedback,
       });
 
     if (questionResponseError) {
-      console.error("Error saving question response:", questionResponseError);
+      console.error(
+        `Error saving response for question ${feedback.questionId}:`,
+        questionResponseError
+      );
       return new Response(
-        JSON.stringify({ error: "Failed to save question response" }),
+        JSON.stringify({ error: "Failed to save question responses" }),
         { status: 500 }
       );
     }
-
-    results.push({
-      questionId: question.id,
-      userAnswer,
-      isCorrect,
-      feedback,
-    });
-
-    if (isCorrect) correctAnswersCount++;
-  }
-
-  const generalFeedback = await generateGeneralFeedback(
-    questions.length,
-    correctAnswersCount,
-    questions.map((q: any) => {
-      const questionOptions = options.filter(
-        (opt: QuestionOption) => opt.questionId === q.id
-      );
-      return {
-        title: q.title,
-        options: questionOptions.map((opt: QuestionOption) => ({
-          title: opt.title,
-          isCorrect: opt.isCorrect,
-        })),
-      };
-    })
-  );
-
-  const { error: updateError } = await supabase
-    .from("quiz_responses")
-    .update({ score: correctAnswersCount, feedback: generalFeedback })
-    .eq("id", quizResponse.id);
-
-  if (updateError) {
-    console.error("Error updating score and feedback:", updateError);
   }
 
   return new Response(
     JSON.stringify({
       email,
-      results,
-      score: correctAnswersCount,
+      score: questionFeedbacks.filter((q) => q.isCorrect).length,
       generalFeedback,
+      questionFeedbacks,
     })
   );
-}
-
-async function decideWithAI(question: string, userAnswer: string): Promise<boolean> {
-  const prompt = `Pregunta: ${question}\nRespuesta del usuario: ${userAnswer}\nDecide si esta respuesta es correcta o no. Solo responde "correcta" o "incorrecta".`;
-  const { text } = await generateText({
-    model: openai("gpt-4o-mini"),
-    prompt: prompt,
-    temperature: 0.7,
-  });
-
-  return text.trim().toLowerCase() === "correcta";
 }
