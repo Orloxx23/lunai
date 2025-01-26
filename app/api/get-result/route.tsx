@@ -1,6 +1,6 @@
 import { createClient } from "@/utils/supabase/server";
 import { openai } from "@ai-sdk/openai";
-import { generateText, generateObject } from "ai";
+import { generateObject } from "ai";
 import { z } from "zod";
 
 type Answer = Record<string, string>;
@@ -27,14 +27,14 @@ type ValidationResult = {
   feedback: string;
 };
 
+type FeedbackSchema = z.infer<typeof feedbackSchema>;
 const feedbackSchema = z.object({
   generalFeedback: z.string(),
   questionFeedbacks: z.array(
     z.object({
       questionId: z.string(),
-      userAnswer: z.string(),
-      isCorrect: z.boolean(),
       feedback: z.string(),
+      isCorrect: z.boolean(), // Agregamos isCorrect al feedback de cada pregunta
     })
   ),
 });
@@ -63,8 +63,23 @@ export async function POST(req: Request): Promise<Response> {
     .single();
 
   if (userError || !user) {
+    return new Response(JSON.stringify({ error: "User not found" }), {
+      status: 404,
+    });
+  }
+
+  const { data: quizResponse, error: quizResponseError } = await supabase
+    .from("quiz_responses")
+    .insert({ userId: user.id, quizId: quizId, score: 0, email: email })
+    .select("id")
+    .single();
+
+  if (quizResponseError || !quizResponse) {
     return new Response(
-      JSON.stringify({ error: "Failed to fetch user data" }),
+      JSON.stringify({
+        error: "Failed to create quiz response",
+        quizResponseError,
+      }),
       { status: 500 }
     );
   }
@@ -92,109 +107,125 @@ export async function POST(req: Request): Promise<Response> {
     });
   }
 
-  const formattedQuestions = questions.map((q) => ({
-    id: q.id,
-    title: q.title,
-    type: q.type,
-    correctAnswer: q.correctAnswer,
-    options: options
-      .filter((opt) => opt.questionId === q.id)
-      .map((opt) => ({
-        id: opt.id,
-        title: opt.title,
-        isCorrect: opt.isCorrect,
-      })),
-  }));
+  const results: ValidationResult[] = [];
+  let correctAnswersCount = 0;
 
-  const { object } = await generateObject({
-    model: "gpt-4o-mini",
-    schema: feedbackSchema,
-    prompt: `
-      Las siguientes son ${formattedQuestions.length} preguntas y respuestas del usuario.
-      Genera un feedback general sobre el rendimiento del usuario, junto con feedback para cada pregunta.
+  // Preparar el payload para el feedback
+  const feedbackPayload = questions.map((question: any) => {
+    const userAnswer = answers[question.id];
+    const questionOptions = options.filter(
+      (opt: QuestionOption) => opt.questionId === question.id
+    );
+    const correctOption = questionOptions.find(
+      (opt: QuestionOption) => opt.isCorrect
+    );
 
-      Preguntas y respuestas:
-      ${formattedQuestions
-        .map((q) => {
-          const userAnswer = answers[q.id] || "Sin respuesta";
-          const isCorrect =
-            q.type === "multiple"
-              ? q.options.find((opt) => opt.id === userAnswer)?.isCorrect ||
-                false
-              : userAnswer.trim().toLowerCase() ===
-                (q.correctAnswer || "").trim().toLowerCase();
-          return `
-            - Pregunta: ${q.title}
-            - Respuesta del usuario: ${userAnswer}
-            - ¿Es correcta?: ${isCorrect ? "Sí" : "No"}
-          `;
-        })
-        .join("\n")}
-      Devuelve el feedback en el siguiente formato:
-      {
-        generalFeedback: string,
-        questionFeedbacks: [
-          {
-            questionId: string,
-            userAnswer: string,
-            isCorrect: boolean,
-            feedback: string
-          }
-        ]
-      }.
-    `,
+    // Para preguntas de opción múltiple, isCorrect se basa en la opción seleccionada
+    const isCorrect =
+      question.type === "multiple"
+        ? questionOptions.some(
+            (opt: QuestionOption) => opt.id === userAnswer && opt.isCorrect
+          )
+        : null; // Para preguntas abiertas, isCorrect lo decide la IA
+
+    return {
+      questionId: question.id,
+      question: question.title,
+      userAnswer,
+      correctAnswer: correctOption?.title || question.correctAnswer,
+      type: question.type, // Incluimos el tipo de pregunta en el payload
+      isCorrect, // Solo se usa para preguntas de opción múltiple
+    };
   });
 
-  const { generalFeedback, questionFeedbacks } = object;
+  try {
+    const { object: feedbackResult } = await generateObject({
+      model: openai("gpt-4o-mini"),
+      schema: feedbackSchema,
+      prompt: `Estas son las respuestas proporcionadas por el usuario:\n\n${JSON.stringify(feedbackPayload)}\n\nPor favor, genera un feedback general dirigido al usuario, explicando con detalle en qué áreas tuvo un buen desempeño y en cuáles necesita mejorar. Asegúrate de ser claro y específico, proporcionando ejemplos concretos de lo que hizo bien y lo que podría hacer de manera diferente. Usa un tono positivo y constructivo, utilizando frases como: 'Has demostrado...', 'Lograste...', 'Es importante que trabajes en...', 'Podrías mejorar en...'.
 
-  // Guardar las respuestas y el feedback
-  const { error: quizResponseError, data: quizResponse } = await supabase
-    .from("quiz_responses")
-    .insert({
-      userId: user.id,
-      quizId: quizId,
-      score: questionFeedbacks.filter((q) => q.isCorrect).length,
-      feedback: generalFeedback,
-    })
-    .select("id")
-    .single();
+Incluye sugerencias claras y prácticas que el usuario pueda implementar para mejorar en las áreas donde falló. Si detectas patrones o problemas recurrentes en sus respuestas, menciónalos de manera explícita. Además, al final del feedback general, genera una lista de temas o conceptos específicos que el usuario debería estudiar, basándote en las áreas donde tuvo fallos. Estos temas deben ser concretos y relacionados con las preguntas o áreas en las que necesita mejorar.
 
-  if (quizResponseError || !quizResponse) {
+Nota importante para la revisión: Para las respuestas abiertas o de texto (aquellas que no son UUID), ten en cuenta que la respuesta correcta no es una coincidencia exacta, sino una idea general o ejemplos. Por ejemplo, si la respuesta correcta es "Aguardiente, café, colombiana", no esperamos que el usuario responda exactamente eso, sino que su respuesta esté alineada con esa idea general. Si la respuesta del usuario es "Aguardiente", "café" o cualquier otra bebida típica de Colombia, la respuesta debe considerarse correcta. Evalúa si la respuesta del usuario es válida basándote en el contenido y no en una coincidencia exacta.
+
+Además, ten en cuenta lo que se solicita en la pregunta. Si la pregunta pide mencionar solo una cosa (por ejemplo, "Nombra una de las bebidas típicas de Colombia"), el feedback no debe pedirle al usuario que mencione más ejemplos, ya que eso iría en contra de las instrucciones de la pregunta. En su lugar, el feedback debe centrarse en si la respuesta proporcionada es válida y, si es necesario, ofrecer sugerencias adicionales sin contradecir la consigna de la pregunta.
+
+Para las respuestas correctas (incluyendo respuestas abiertas correctas), no es necesario ofrecer feedback sobre áreas de mejora. Solo incluye una felicitación breve y positiva, como por ejemplo: '¡Bien hecho!' o '¡Excelente trabajo!'.
+
+Finalmente, genera un feedback individual para cada pregunta, explicando con precisión en qué destacó el usuario, qué aspectos específicos debería mejorar, y cómo puede ajustar su enfoque en preguntas similares en el futuro. Además, para cada pregunta, indica si la respuesta del usuario es correcta o no (isCorrect). Para preguntas de opción múltiple, usa el valor de isCorrect proporcionado en el payload. Para preguntas abiertas, decide si la respuesta es correcta o no basándote en la idea general proporcionada en la respuesta correcta.`,
+    });
+
+    const { generalFeedback, questionFeedbacks } = feedbackResult;
+
+    for (const question of questions) {
+      const userAnswer = answers[question.id];
+      const questionFeedback = questionFeedbacks.find(
+        (fb: any) => fb.questionId === question.id
+      );
+
+      if (questionFeedback) {
+        // Para preguntas de opción múltiple, usamos el isCorrect del payload
+        // Para preguntas abiertas, usamos el isCorrect generado por la IA
+        const isCorrect =
+          question.type === "multiple"
+            ? feedbackPayload.find((fb: any) => fb.questionId === question.id)
+                ?.isCorrect
+            : questionFeedback.isCorrect;
+
+        results.push({
+          questionId: question.id,
+          userAnswer,
+          isCorrect: isCorrect || false,
+          feedback: questionFeedback.feedback,
+        });
+
+        if (isCorrect) correctAnswersCount++;
+
+        const { error: questionResponseError } = await supabase
+          .from("question_responses")
+          .insert({
+            quizResponseId: quizResponse.id,
+            questionId: question.id,
+            answer: userAnswer,
+            isCorrect: isCorrect,
+            feedback: questionFeedback.feedback,
+          });
+
+        if (questionResponseError) {
+          console.error(
+            "Error saving question response:",
+            questionResponseError
+          );
+          return new Response(
+            JSON.stringify({ error: "Failed to save question response" }),
+            { status: 500 }
+          );
+        }
+      }
+    }
+
+    const { error: updateError } = await supabase
+      .from("quiz_responses")
+      .update({ score: correctAnswersCount, feedback: generalFeedback })
+      .eq("id", quizResponse.id);
+
+    if (updateError) {
+      console.error("Error updating score and feedback:", updateError);
+    }
+
     return new Response(
-      JSON.stringify({ error: "Failed to save quiz response" }),
+      JSON.stringify({
+        email,
+        results,
+        score: correctAnswersCount,
+        generalFeedback,
+      })
+    );
+  } catch (error) {
+    console.error("Error generating feedback:", error);
+    return new Response(
+      JSON.stringify({ error: "Failed to generate feedback" }),
       { status: 500 }
     );
   }
-
-  for (const feedback of questionFeedbacks) {
-    const { error: questionResponseError } = await supabase
-      .from("question_responses")
-      .insert({
-        quizResponseId: quizResponse.id,
-        questionId: feedback.questionId,
-        answer: feedback.userAnswer,
-        isCorrect: feedback.isCorrect,
-        feedback: feedback.feedback,
-      });
-
-    if (questionResponseError) {
-      console.error(
-        `Error saving response for question ${feedback.questionId}:`,
-        questionResponseError
-      );
-      return new Response(
-        JSON.stringify({ error: "Failed to save question responses" }),
-        { status: 500 }
-      );
-    }
-  }
-
-  return new Response(
-    JSON.stringify({
-      email,
-      score: questionFeedbacks.filter((q) => q.isCorrect).length,
-      generalFeedback,
-      questionFeedbacks,
-    })
-  );
 }
