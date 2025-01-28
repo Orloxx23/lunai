@@ -5,39 +5,14 @@ import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next-nprogress-bar";
 import React, { useEffect, useState } from "react";
 
-export default function Responses({ view }: { view: string }) {
+export default function Responses({ view, responses }: { view: string , responses: any[]}) {
   const { quiz } = useEditor();
-  const [responses, setResponses] = useState<any[]>([]);
 
   let router = useRouter();
-
-  const getResponses = async () => {
-    const supabase = createClient();
-
-    const { data, error } = await supabase
-      .from("quiz_responses")
-      .select("*")
-      .eq("quizId", quiz?.id);
-
-    if (error) {
-      console.error(error);
-      return;
-    }
-
-    if (data) {
-      setResponses(data);
-    }
-  };
 
   const goToResponse = (responseId: string) => {
     router.push(`/dashboard/editor/${quiz?.id}/review/${responseId}`);
   };
-
-  useEffect(() => {
-    if (quiz) {
-      getResponses();
-    }
-  }, [quiz]);
 
   return (
     <div

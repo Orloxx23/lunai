@@ -1,5 +1,6 @@
 {
   "private": true,
+  "version": "0.0.2-beta",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -63,7 +64,7 @@
     "react-dom": "18.2.0",
     "react-hook-form": "^7.53.0",
     "react-resizable-panels": "^2.1.4",
-    "recharts": "^2.12.7",
+    "recharts": "^2.15.1",
     "remark": "^15.0.1",
     "remark-html": "^16.0.1",
     "sonner": "^1.5.0",

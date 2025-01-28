@@ -7,8 +7,6 @@ import { Option, Question, Quiz } from "@/lib/types/editorTypes";
 import { createClient } from "@/utils/supabase/client";
 import { usePathname, useRouter } from "next/navigation";
 import React, { createContext, useContext, useEffect, useState } from "react";
-import { experimental_useObject as useObject } from "ai/react";
-import { questionSchema } from "@/app/api/generate-quiz/quizSchemas";
 
 type MyContextData = {
   quiz: Quiz | null;

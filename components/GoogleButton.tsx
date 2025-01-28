@@ -28,7 +28,7 @@ export default function GoogleButton() {
       className="w-full flex gap-2"
     >
       <GoogleIcon />
-      Login with Google
+      Iniciar sesión con Google
     </Button>
   );
 }

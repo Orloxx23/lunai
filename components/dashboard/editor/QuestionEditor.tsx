@@ -1,9 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { useEditor } from "@/context/EditorContext";
-import { Option, Question } from "@/lib/types/editorTypes";
-import { IconTrash } from "@tabler/icons-react";
+import { RadioGroup } from "@/components/ui/radio-group";
 import {
   Select,
   SelectContent,
@@ -11,13 +7,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import React, { useEffect, useState } from "react";
-import { Label } from "@/components/ui/label";
-import AnswerEditor from "./AnswerEditor";
-import useDebounced from "@/hooks/use-debounced";
-import { createClient } from "@/utils/supabase/client";
-import { generateUUID } from "@/lib/functions/editor";
 import { Textarea } from "@/components/ui/textarea";
+import { useEditor } from "@/context/EditorContext";
+import useDebounced from "@/hooks/use-debounced";
+import { generateUUID } from "@/lib/functions/editor";
+import { Option, Question } from "@/lib/types/editorTypes";
+import { createClient } from "@/utils/supabase/client";
+import { IconTrash } from "@tabler/icons-react";
+import { useEffect, useState } from "react";
+import AnswerEditor from "./AnswerEditor";
 
 interface Props {
   data: Question;
@@ -137,7 +135,7 @@ export default function QuestionEditor({ index, data }: Props) {
   }, [debouncedQuestionData]);
 
   useEffect(() => {
-    console.log(data.correctAnswer);
+    // console.log(data.correctAnswer);
   }, [data]);
 
   return (

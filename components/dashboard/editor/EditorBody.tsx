@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { IconPlus } from "@tabler/icons-react";
 import { Quiz } from "@/lib/types/editorTypes";
 import Responses from "./Responses";
+import { createClient } from "@/utils/supabase/client";
+import { usePathname } from "next/navigation";
 
 interface Props {
   quiz: Quiz;
@@ -16,9 +18,46 @@ interface Props {
 export default function EditorBody({ quiz }: Props) {
   const { setQuiz, updateQuiz, questions, createQuestion } = useEditor();
   const [view, setView] = useState<"editor" | "responses">("editor");
+  const [responses, setResponses] = useState<any[]>([]);
+
+  const supabase = createClient();
+
+  const getResponses = async () => {
+    const { data, error } = await supabase
+      .from("quiz_responses")
+      .select("*")
+      .eq("quizId", quiz?.id);
+
+    if (error) {
+      console.error(error);
+      return;
+    }
+
+    if (data) {
+      setResponses(data);
+    }
+  };
 
   useEffect(() => {
     setQuiz(quiz);
+    getResponses();
+  }, []);
+
+  useEffect(() => {
+    const myChannel = supabase
+      .channel(quiz.id)
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "question_responses" },
+        (payload) => {
+          getResponses();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(myChannel);
+    };
   }, []);
 
   return (
@@ -31,16 +70,21 @@ export default function EditorBody({ quiz }: Props) {
           }}
           className="w-full"
         >
-          Editor
+          Preguntas
         </Button>
         <Button
           variant={view === "responses" ? "default" : "ghost"}
           onClick={() => {
             setView("responses");
           }}
-          className="w-full"
+          className="w-full flex gap-1 items-center"
         >
-          Respuestas
+          <span>Respuestas</span>{" "}
+          {responses.length > 0 && (
+            <span className="px-2 py-0.5 bg-accent-foreground/80 text-accent rounded-xl">
+              {responses.length}
+            </span>
+          )}
         </Button>
       </div>
 
@@ -61,7 +105,7 @@ export default function EditorBody({ quiz }: Props) {
         </Button>
       </div>
 
-      <Responses view={view} />
+      <Responses view={view} responses={responses} />
     </div>
   );
 }

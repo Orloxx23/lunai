@@ -9,7 +9,7 @@ export default function MainInfo() {
 
   return (
     <div
-      className={`w-full p-4 rounded-lg border bg-background flex flex-col gap-2 transition duration-300 `}
+      className={`w-full p-4 rounded-lg border bg-background flex flex-col gap-2 transition duration-300`}
     >
       <Input
         placeholder="Titulo del cuestionario"

@@ -93,7 +93,6 @@ export default function QuizForm({ quiz, questions, options, user }: Props) {
   async function onSubmit(values: FormValues) {
     if (finished) return;
 
-    console.log(values);
     setLoading(true);
     setOpen(true);
     const res = await fetch(`/api/get-result`, {
@@ -105,7 +104,7 @@ export default function QuizForm({ quiz, questions, options, user }: Props) {
     });
 
     const data = await res.json();
-    console.log("🚀 ~ onSubmit ~ data:", data);
+
     setResult(data);
     setFinished(true);
 

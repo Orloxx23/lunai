@@ -19,6 +19,7 @@ import useDebounced from "@/hooks/use-debounced";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next-nprogress-bar";
 import Topbar from "@/components/dashboard/editor/Topbar";
+import { Quiz } from "@/lib/types/editorTypes";
 
 export default function ReviewPage({
   params,
@@ -159,7 +160,7 @@ export default function ReviewPage({
 
   return (
     <>
-      <Topbar />
+      <Topbar quiz={quiz as Quiz} />
       <div className="max-w-3xl mx-auto flex flex-col gap-4 py-4 pt-[calc(7vh+1rem)]">
         <Button onClick={goBack}>
           <IconArrowLeft size={24} />

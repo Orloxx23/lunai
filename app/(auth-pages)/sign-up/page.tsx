@@ -24,27 +24,27 @@ export default function Signup({ searchParams }: { searchParams: Message }) {
       <div className="flex items-center justify-center py-12">
         <form className="mx-auto grid w-[350px] gap-6">
           <div className="grid gap-2 text-center">
-            <h1 className="text-3xl font-bold">Sign Up</h1>
+            <h1 className="text-3xl font-bold">Crea tu cuenta</h1>
             <p className="text-balance text-muted-foreground">
-              Enter your details below to create your account
+              Llena el formulario para crear tu cuenta
             </p>
           </div>
           <div className="grid gap-4">
             <FormMessage message={searchParams} />
             <div className="grid gap-2">
-              <Label htmlFor="email">Username</Label>
+              <Label htmlFor="email">Nombre de usuario</Label>
               <Input
                 id="username"
                 name="username"
                 type="text"
-                placeholder="Your username"
+                placeholder="Usuario"
                 autoComplete="username"
                 required
               />
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">Correo electrónico</Label>
               <Input
                 id="email"
                 name="email"
@@ -56,38 +56,41 @@ export default function Signup({ searchParams }: { searchParams: Message }) {
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password">Contraseña</Label>
               <Input
                 id="password"
                 name="password"
                 type="password"
-                placeholder="Your password"
+                placeholder="********"
                 autoComplete="new-password"
                 required
               />
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="password">Confirm Password</Label>
+              <Label htmlFor="password">Confirmar contraseña</Label>
               <Input
                 id="password"
                 name="confirm-password"
                 type="password"
-                placeholder="Your password again"
+                placeholder="********"
                 autoComplete="new-password"
                 required
               />
             </div>
-            <SubmitButton pendingText="Signing In..." formAction={signUpAction}>
-              Sign up
+            <SubmitButton
+              pendingText="Iniciando sesión"
+              formAction={signUpAction}
+            >
+              Crear cuenta
             </SubmitButton>
 
             <GoogleButton />
           </div>
           <div className="mt-4 text-center text-sm">
-            Already have an account?{" "}
+            ¿Ya tienes una cuenta?{" "}
             <Link href="/sign-in" className="underline">
-              Sign in
+              Inicia sesión
             </Link>
           </div>
         </form>

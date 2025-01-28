@@ -1,38 +1,39 @@
 "use client";
 
-import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  IconDeviceFloppy,
-  IconEye,
-  IconLoader2,
-  IconMoonFilled,
-  IconSparkles,
-} from "@tabler/icons-react";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useEditor } from "@/context/EditorContext";
+import {
+  IconDeviceFloppy,
+  IconEye,
+  IconLoader2,
+  IconMoonFilled,
+} from "@tabler/icons-react";
 import Link from "next/link";
 import UserMenu from "../UserMenu";
 import Generator from "./Generator";
-import { useEditor } from "@/context/EditorContext";
-import { Quiz } from "@/lib/types/editorTypes";
 import ShareButton from "./ShareButton";
 import StateButton from "./StateButton";
+import { useEffect, useState } from "react";
+import { Quiz } from "@/lib/types/editorTypes";
 
-export default function Topbar() {
+export default function Topbar({ quiz }: { quiz: Quiz }) {
   const {
-    quiz,
     saving,
     updateQuiz,
     saveQuiz,
     quiz: quizLocal,
     generateQuestions,
   } = useEditor();
+
+  const [state, setState] = useState(quiz?.state);
+
   return (
     <div className="fixed top-0 w-full bg-background h-[7vh] py-4 px-8 flex items-center justify-between gap-4 border-b z-30">
       <div className="flex items-center gap-2 w-fit">
@@ -53,7 +54,7 @@ export default function Topbar() {
 
         <Input
           placeholder="Cuestionario sin nombre"
-          value={quizLocal?.name || ""}
+          value={quizLocal?.name || quiz?.name}
           onChange={(e) => {
             updateQuiz("name", e.target.value);
           }}
@@ -73,7 +74,7 @@ export default function Topbar() {
         >
           <IconEye size={24} />
         </Button>
-        <StateButton />
+        <StateButton state={state} setState={setState} />
         <Button
           variant={"ghost"}
           size={"icon"}

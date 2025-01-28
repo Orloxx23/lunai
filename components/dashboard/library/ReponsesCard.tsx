@@ -1,26 +1,13 @@
 "use client";
 
-import React, { useState } from "react";
 import { Quiz } from "@/lib/types/editorTypes";
-import { DateTime } from "luxon";
 import {
-  IconDots,
-  IconDotsVertical,
   IconLoader2,
-  IconMoon,
-  IconMoonFilled,
+  IconMoonFilled
 } from "@tabler/icons-react";
+import { DateTime } from "luxon";
 import { useRouter } from "next-nprogress-bar";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Button } from "@/components/ui/button";
-import { createClient } from "@/utils/supabase/client";
+import { useState } from "react";
 
 interface Props {
   quiz: Quiz;
@@ -32,7 +19,7 @@ export default function ReponseCard({ response, quiz }: Props) {
   const [loading, setLoading] = useState(false);
 
   const _response = response.response;
-  console.log("🚀 ~ ReponseCard ~ _response:", _response)
+  // console.log("🚀 ~ ReponseCard ~ _response:", _response)
 
   const handleClick = () => {
     setLoading(true);

@@ -10,25 +10,23 @@ import Link from "next/link";
 import React from "react";
 
 export default function Login({ searchParams }: { searchParams: Message }) {
-
-  const handleLogin = async () => {
-    
-  }
+  const handleLogin = async () => {};
 
   return (
     <div className="w-full lg:grid lg:min-h-[100svh] lg:grid-cols-2 xl:min-h-[100svh]">
       <div className="flex items-center justify-center py-12">
         <form className="mx-auto grid w-[350px] gap-6">
           <div className="grid gap-2 text-center">
-            <h1 className="text-3xl font-bold">Login</h1>
+            <h1 className="text-3xl font-bold">Iniciar sesión</h1>
             <p className="text-balance text-muted-foreground">
-              Enter your email below to login to your account
+              Ingresa tu correo electrónico y contraseña para iniciar sesión en
+              tu cuenta
             </p>
           </div>
           <div className="grid gap-4">
             <FormMessage message={searchParams} />
             <div className="grid gap-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">Correo electrónico</Label>
               <Input
                 id="email"
                 name="email"
@@ -39,31 +37,31 @@ export default function Login({ searchParams }: { searchParams: Message }) {
             </div>
             <div className="grid gap-2">
               <div className="flex items-center">
-                <Label htmlFor="password">Password</Label>
+                <Label htmlFor="password">Contraseña</Label>
                 <Link
                   href="/forgot-password"
                   className="ml-auto inline-block text-sm underline"
                 >
-                  Forgot your password?
+                  ¿Olvidaste tu contraseña?
                 </Link>
               </div>
               <Input
                 id="password"
                 name="password"
                 type="password"
-                placeholder="Your password"
+                placeholder="********"
                 required
               />
             </div>
             <SubmitButton pendingText="Signing In..." formAction={signInAction}>
-              Sign in
+              Iniciar sesión
             </SubmitButton>
             <GoogleButton />
           </div>
           <div className="mt-4 text-center text-sm">
-            Don&apos;t have an account?{" "}
+            ¿No tienes una cuenta?{" "}
             <Link href="/sign-up" className="underline">
-              Sign up
+              Regístrate
             </Link>
           </div>
         </form>

@@ -1,5 +1,4 @@
-import React, { useState } from "react";
-import { Quiz } from "@/lib/types/editorTypes";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -8,9 +7,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { IconLock, IconLockOpen, IconLockPassword } from "@tabler/icons-react";
-import { useEditor } from "@/context/EditorContext";
 import {
   Select,
   SelectContent,
@@ -18,10 +14,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useEditor } from "@/context/EditorContext";
+import { IconLock, IconLockOpen, IconLockPassword } from "@tabler/icons-react";
+import { useState } from "react";
 
-export default function StateButton() {
-  const { quiz, updateQuiz } = useEditor();
-  const [state, setState] = useState(quiz?.state);
+export default function StateButton({
+  state,
+  setState,
+}: {
+  state: string;
+  setState: (state: "public" | "exclusive" | "private") => void;
+}) {
+  const { updateQuiz } = useEditor();
   const [hightlight, setHightlight] = useState(false);
 
   return (
