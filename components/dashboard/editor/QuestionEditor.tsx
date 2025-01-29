@@ -13,9 +13,10 @@ import useDebounced from "@/hooks/use-debounced";
 import { generateUUID } from "@/lib/functions/editor";
 import { Option, Question } from "@/lib/types/editorTypes";
 import { createClient } from "@/utils/supabase/client";
-import { IconTrash } from "@tabler/icons-react";
+import { IconPhoto, IconTrash, IconX } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
 import AnswerEditor from "./AnswerEditor";
+import UploadContentOnQuestion from "./UploadContentOnQuestion";
 
 interface Props {
   data: Question;
@@ -23,8 +24,10 @@ interface Props {
 }
 
 export default function QuestionEditor({ index, data }: Props) {
+  const supabase = createClient();
   const { deleteQuestion, updateQuestion, setSaving, generatedOptions } =
     useEditor();
+
   const [questionData, setQuestionData] = useState<Question>(data);
   const debouncedQuestionData = useDebounced(questionData, 700);
   const [options, setOptions] = useState<Option[]>([]);
@@ -110,6 +113,47 @@ export default function QuestionEditor({ index, data }: Props) {
     setSaving(false);
   };
 
+  const getQuestion = async () => {
+    const { data: _question, error } = await supabase
+      .from("questions")
+      .select("*")
+      .eq("id", data?.id)
+      .single();
+
+    if (error) {
+      console.error("Error getting question", error);
+    }
+
+    if (_question) {
+      setQuestionData(_question);
+    }
+  };
+
+  const removeImage = async () => {
+    setQuestionData({ ...questionData, image: "" });
+
+    const { error } = await supabase
+      .from("questions")
+      .update({ image: null })
+      .eq("id", data.id);
+
+    if (error) {
+      console.error("Error removing image", error);
+    }
+
+    const imgName = questionData?.image?.split("/").pop();
+
+    const { error: deleteError } = await supabase.storage
+      .from("contents")
+      .remove([`${data.quizId}/${imgName}`]);
+
+    if (deleteError) {
+      console.error("Error deleting image", deleteError);
+    }
+
+    getQuestion();
+  };
+
   useEffect(() => {
     if (data) {
       getOptions(data.id);
@@ -150,6 +194,8 @@ export default function QuestionEditor({ index, data }: Props) {
           className="text-xl font-bold border-0 focus:border-2 resize-none"
         />
 
+        <UploadContentOnQuestion question={data} callback={getQuestion} />
+
         <Select
           value={data.type}
           onValueChange={(e) => {
@@ -177,6 +223,25 @@ export default function QuestionEditor({ index, data }: Props) {
           </Button>
         </div>
       </div>
+
+      {questionData.image && (
+        <div className="relative w-full max-h-96 bg-accent rounded-lg overflow-hidden">
+          <Button
+            variant="secondary"
+            size="icon"
+            className="absolute top-2 right-2"
+            onClick={removeImage}
+          >
+            <IconX size={18} />
+          </Button>
+          <img
+            src={questionData.image}
+            alt="question"
+            className="w-full h-full object-contain rounded-lg"
+            draggable={false}
+          />
+        </div>
+      )}
 
       <div className="flex flex-col gap-2">
         {data.type === "multiple" && (

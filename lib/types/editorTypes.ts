@@ -27,6 +27,7 @@ export type Question = {
   quizId: string;
   createdAt?: string;
   correctAnswer?: string;
+  image?: string;
 };
 
 export type Option = {

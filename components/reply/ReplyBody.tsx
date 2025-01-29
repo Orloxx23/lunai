@@ -204,6 +204,16 @@ export default function QuizForm({ quiz, questions, options, user }: Props) {
                   key={question.id}
                   className="w-full p-4 rounded-lg border bg-background flex flex-col gap-2 transition duration-300"
                 >
+                  {question.image && (
+                    <img
+                      src={question.image}
+                      alt="Question image"
+                      className="w-full rounded-md object-cover max-h-96 mx-auto mb-2 bg-accent"
+                      draggable={false}
+                      height={384}
+                    />
+                  )}
+
                   <FormField
                     control={form.control}
                     name={`answers.${question.id}`}

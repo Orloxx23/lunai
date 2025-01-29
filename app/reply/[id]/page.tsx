@@ -69,7 +69,7 @@ export default async function ReplyPage({
   if (quiz) {
     const { data } = await supabase
       .from("questions")
-      .select("id, title, description, type, quizId, position")
+      .select("id, title, description, type, quizId, position, image")
       .eq("quizId", quiz.id);
 
     questions = data || [];
@@ -79,7 +79,7 @@ export default async function ReplyPage({
   if (questions) {
     const { data } = await supabase
       .from("options")
-      .select("id, title, questionId, description")
+      .select("id, title, questionId, description ")
       .in(
         "questionId",
         questions.map((q) => q.id)
