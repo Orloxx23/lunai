@@ -44,10 +44,7 @@ export default function LibraryPage() {
     setQuizzes(newQuizzes);
 
     const supabase = createClient();
-    const { error } = await supabase
-      .from("quizzes")
-      .delete()
-      .eq("id", id);
+    const { error } = await supabase.from("quizzes").delete().eq("id", id);
 
     if (error) {
       console.error("Error deleting quiz", error);
@@ -81,7 +78,7 @@ export default function LibraryPage() {
                 ></div>
               ))
             : quizzes.map((quiz, index) => (
-                <QuizCard key={quiz.id} quiz={quiz} deleteQuiz={deleteQuiz} />
+                <QuizCard key={quiz.id} quiz={quiz} />
               ))}
         </div>
       </div>
