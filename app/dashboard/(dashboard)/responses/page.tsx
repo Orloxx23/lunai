@@ -111,7 +111,7 @@ export default function ReponsesPage() {
   }, [loading, hasMore, isFetching, loadMoreResponses]);
 
   return (
-    <div className="max-w-7xl w-full mx-auto grid grid-cols-5 gap-4 h-auto py-4 ">
+    <div className="max-w-7xl w-full mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-4 h-auto py-4 ">
       {loading ? (
         Array.from({ length: 15 }).map((_, index) => (
           <div key={index} className="w-full h-64 bg-gray-200 animate-pulse" />
@@ -139,9 +139,7 @@ export default function ReponsesPage() {
         <p className="text-muted-foreground">No hay respuestas</p>
       )}
       {isFetching && <div className="w-full h-64 bg-gray-200 animate-pulse" />}
-      {!hasMore && (
-        <></>
-      )}
+      {!hasMore && <></>}
     </div>
   );
 }

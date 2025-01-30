@@ -32,45 +32,9 @@ export default function Topbar() {
   }, [pathname]);
 
   return (
-    <div className="h-[10vh] py-4 px-8 flex items-center gap-4">
-      {/* <Sheet>
-        <SheetTrigger asChild>
-          <Button size={"icon"} variant={"outline"} className="flex 2xl:hidden">
-            <IconMenu2 size={24} />
-          </Button>
-        </SheetTrigger>
-        <SheetContent
-          side={"left"}
-          className="bg-primary border-0 text-primary-foreground"
-        >
-          <SheetHeader className="hidden">
-            <SheetTitle>Menu</SheetTitle>
-            <SheetDescription>Selecciona una opción</SheetDescription>
-          </SheetHeader>
-          <div className="w-full flex flex-col">
-            <span className="text-3xl">{APP_NAME}</span>
-            <Separator className="my-4" />
-            {sidebarItems.map((item, index) => (
-              <Link
-                key={index}
-                href={item.href ?? ""}
-                className={`flex items-center gap-4 py-4 px-4 hover:bg-white/10  text-lg transition-colors duration-300 rounded-md ${
-                  pathname === item.href
-                    ? "bg-white text-primary hover:bg-white"
-                    : "text-primary-foreground"
-                }`}
-              >
-                <span className="">{item.icon}</span>
-                <span className="lg:hidden 2xl:block">{item.title}</span>
-              </Link>
-            ))}
-          </div>
-        </SheetContent>
-      </Sheet> */}
-
-      {/* <CommandDialogSearch /> */}
-
-      <div className="flex gap-4 items-center">
+    <div className="h-[10vh] py-4 px-8 flex items-center gap-4 justify-between">
+      {/* Menú de navegación principal */}
+      <div className="hidden md:flex gap-4 items-center">
         <Link
           href={"/dashboard"}
           className={`${pathname === "/dashboard" ? "text-primary font-bold" : "text-foreground/50 hover:text-primary/70"} `}
@@ -85,8 +49,38 @@ export default function Topbar() {
         </Link>
       </div>
 
+      {/* Menú hamburguesa en pantallas pequeñas */}
+      <Sheet open={open} onOpenChange={setOpen}>
+        <SheetTrigger className="md:hidden">
+          <IconMenu2 size={24} />
+        </SheetTrigger>
+        <SheetContent side={"left"}>
+          <SheetHeader>
+            <SheetTitle>Menú</SheetTitle>
+          </SheetHeader>
+          <div className="flex flex-col gap-4">
+            <Link
+              href={"/dashboard"}
+              className={`${pathname === "/dashboard" ? "text-primary font-bold" : "text-foreground/50 hover:text-primary/70"} `}
+            >
+              Cuestionarios
+            </Link>
+            <Link
+              href={"/dashboard/responses"}
+              className={`${pathname === "/dashboard/responses" ? "text-primary font-bold" : "text-foreground/50 hover:text-primary/70"} `}
+            >
+              Mis respuestas
+            </Link>
+            <Separator />
+            {/* Puedes agregar más enlaces aquí */}
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      {/* Espaciador */}
       <div className="flex-1"></div>
 
+      {/* Botón Crear y UserMenu */}
       <div className="flex items-center gap-4">
         <button
           onClick={createQuiz}

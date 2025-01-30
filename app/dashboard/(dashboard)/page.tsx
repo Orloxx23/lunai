@@ -219,7 +219,7 @@ export default function LibraryPage() {
   };
 
   return (
-    <div className="w-full max-w-7xl mx-auto grid grid-cols-5 gap-4 py-4">
+    <div className="w-full max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-4 py-4">
       {currentFolder && (
         <div
           className="w-full h-72 flex items-center justify-center bg-white rounded-lg cursor-pointer hover:bg-gray-200"
