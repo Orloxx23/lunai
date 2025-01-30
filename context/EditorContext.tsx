@@ -335,7 +335,11 @@ const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
       await saveQuiz();
     };
 
-    document.title = `${quiz?.name || "Cuestionario sin nombre"} - ${APP_NAME}`;
+    if (pathname.includes("editor") && quiz.id) {
+      document.title = `${quiz?.name || "Cuestionario sin nombre"} - ${APP_NAME}`;
+    } else {
+      document.title = `${APP_NAME}: El Poder del Conocimiento con Inteligencia Artificial`;
+    }
 
     saveIfChanged();
   }, [debouncedQuiz]);
