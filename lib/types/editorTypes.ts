@@ -17,6 +17,7 @@ export type Quiz = {
   authorId?: string;
   isPublic: boolean;
   state: "public" | "private" | "exclusive";
+  folderId?: string;
 };
 
 export type Question = {
@@ -37,4 +38,12 @@ export type Option = {
   isCorrect?: boolean;
   questionId: string;
   createdAt?: string;
+};
+
+export type Folder = {
+  id: string;
+  folder_name: string;
+  created_at?: string;
+  user_id: string;
+  parent_id?: string;
 };

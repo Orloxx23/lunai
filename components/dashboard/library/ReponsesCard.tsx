@@ -33,7 +33,7 @@ export default function ReponseCard({ response, quiz }: Props) {
     <button
       disabled={loading}
       onClick={handleClick}
-      className="min-w-52 w-52 relative border border-border h-64 flex flex-col rounded-md overflow-hidden cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 hover:border-2 hover:border-primary transition duration-300 ease-in-out hover:scale-105 disabled:pointer-events-none disabled:opacity-50"
+      className="w-full relative border border-border h-72 flex flex-col rounded-md overflow-hidden cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 hover:border-2 hover:border-primary transition duration-300 ease-in-out hover:scale-105 disabled:pointer-events-none disabled:opacity-50"
     >
       <div
         className={`absolute size-full flex justify-center items-center pointer-events-none transition-opacity duration-300 ease-in-out ${loading ? "opacity-100" : "opacity-0"}`}
@@ -45,9 +45,9 @@ export default function ReponseCard({ response, quiz }: Props) {
       </div>
       <div className="p-4 h-1/3 bg-background w-full border-t border-border flex justify-between items-center gap-2">
         <div className="flex flex-col items-start justify-start truncate">
-          <h1 className="text-sm font-bold truncate">{_response.quizzes.name}</h1>
+          <h1 className="text-sm font-bold truncate">{_response?.quizzes?.name}</h1>
           <p className="text-sm text-muted-foreground truncate">
-            {DateTime.fromISO(_response.createdAt || "").toFormat("LLL dd, yyyy")}
+            {DateTime.fromISO(_response?.createdAt || "").toFormat("LLL dd, yyyy")}
           </p>
         </div>
         {/* <div className="">
