@@ -33,6 +33,7 @@ export default function Topbar({ quiz }: { quiz: Quiz }) {
   } = useEditor();
 
   const [state, setState] = useState(quiz?.state);
+  const [generatorOpen, setGeneratorOpen] = useState(false);
 
   return (
     <div className="fixed top-0 w-full bg-background h-[7vh] py-4 px-8 flex items-center justify-between gap-4 border-b z-30">
@@ -64,7 +65,7 @@ export default function Topbar({ quiz }: { quiz: Quiz }) {
       </div>
 
       <div className="flex items-center gap-2">
-        <Generator />
+        <Generator isOpen={generatorOpen} setIsOpen={setGeneratorOpen} />
         <Button
           size={"icon"}
           variant={"ghost"}

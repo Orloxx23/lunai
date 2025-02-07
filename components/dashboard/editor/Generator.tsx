@@ -42,10 +42,18 @@ import {
 import { useEditor } from "@/context/EditorContext";
 import { cn } from "@/lib/utils";
 
-export default function Generator() {
-  const { generateQuestions, generating } = useEditor();
+interface Props {
+  oneQuestion?: boolean;
+  isOpen: boolean;
+  setIsOpen: (value: boolean) => void;
+}
 
-  const [isOpen, setIsOpen] = useState(false);
+export default function Generator({
+  oneQuestion = false,
+  isOpen,
+  setIsOpen,
+}: Props) {
+  const { generateQuestions, generating } = useEditor();
 
   const topicSchema = z.object({
     amount: z.number().int().positive().min(1).max(10),
@@ -56,7 +64,7 @@ export default function Generator() {
   const form = useForm<z.infer<typeof topicSchema>>({
     resolver: zodResolver(topicSchema),
     defaultValues: {
-      amount: 5,
+      amount: 1,
       context: "",
       difficulty: "medium",
     },
@@ -119,7 +127,11 @@ export default function Generator() {
                             <FormControl>
                               <Textarea
                                 {...field}
-                                placeholder="Tema de las preguntas"
+                                placeholder={
+                                  oneQuestion
+                                    ? "Tema de la pregunta"
+                                    : "Tema de las preguntas"
+                                }
                                 className="resize-none"
                                 //maxLength={100}
                               />
@@ -127,28 +139,30 @@ export default function Generator() {
                           </FormItem>
                         )}
                       />
-                      <FormField
-                        control={form.control}
-                        name="amount"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>
-                              Cantidad de preguntas
-                              <FormMessage className="text-xs" />
-                            </FormLabel>
-                            <FormControl>
-                              <Input
-                                {...field}
-                                placeholder=" Cantidad de preguntas"
-                                type="number"
-                                onChange={(e) => {
-                                  field.onChange(parseInt(e.target.value));
-                                }}
-                              />
-                            </FormControl>
-                          </FormItem>
-                        )}
-                      />
+                      {!oneQuestion && (
+                        <FormField
+                          control={form.control}
+                          name="amount"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>
+                                Cantidad de preguntas
+                                <FormMessage className="text-xs" />
+                              </FormLabel>
+                              <FormControl>
+                                <Input
+                                  {...field}
+                                  placeholder=" Cantidad de preguntas"
+                                  type="number"
+                                  onChange={(e) => {
+                                    field.onChange(parseInt(e.target.value));
+                                  }}
+                                />
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
+                      )}
                       <FormField
                         control={form.control}
                         name="difficulty"
@@ -168,7 +182,9 @@ export default function Generator() {
                                 <SelectItem value="easy">Fácil</SelectItem>
                                 <SelectItem value="medium">Medio</SelectItem>
                                 <SelectItem value="hard">Difícil</SelectItem>
-                                <SelectItem value="mixed">Mixto</SelectItem>
+                                {!oneQuestion && (
+                                  <SelectItem value="mixed">Mixto</SelectItem>
+                                )}
                               </SelectContent>
                             </Select>
 
@@ -208,7 +224,7 @@ export default function Generator() {
               <TabsContent value="file">Change your password here.</TabsContent>
             </Tabs>
           </div>
-          <div className="w-2/5 aspect-[9/16] rounded-lg overflow-hidden relative">
+          <div className="w-2/5 rounded-lg overflow-hidden relative">
             {/* <Image
               src={"/cave.webp"}
               width={576}
