@@ -84,11 +84,13 @@ export default function Generator({
 
   return (
     <AlertDialog open={isOpen} onOpenChange={setIsOpen}>
-      <AlertDialogTrigger asChild>
-        <Button variant={"ghost"} size={"icon"}>
-          <IconSparkles size={24} />
-        </Button>
-      </AlertDialogTrigger>
+      {!oneQuestion && (
+        <AlertDialogTrigger asChild>
+          <Button variant={"ghost"} size={"icon"}>
+            <IconSparkles size={24} />
+          </Button>
+        </AlertDialogTrigger>
+      )}
       <AlertDialogContent className="max-w-2xl" forceMount>
         <AlertDialogHeader className="hidden">
           <AlertDialogTitle>Generar preguntas</AlertDialogTitle>
