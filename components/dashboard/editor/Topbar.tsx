@@ -34,6 +34,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { APP_NAME } from "@/lib/constants/general";
+import { useRouter } from "next-nprogress-bar";
 
 export default function Topbar({ quiz }: { quiz: Quiz }) {
   const {
@@ -41,8 +42,8 @@ export default function Topbar({ quiz }: { quiz: Quiz }) {
     updateQuiz,
     saveQuiz,
     quiz: quizLocal,
-    generateQuestions,
   } = useEditor();
+  const router = useRouter();
 
   const [state, setState] = useState(quiz?.state);
   const [generatorOpen, setGeneratorOpen] = useState(false);
@@ -84,7 +85,7 @@ export default function Topbar({ quiz }: { quiz: Quiz }) {
             size={"icon"}
             variant={"ghost"}
             onClick={() => {
-              window.open(`/reply/${quiz?.id}`, "_blank");
+              router.push(`/reply/${quiz?.id}`);
             }}
           >
             <IconEye size={24} />
@@ -132,7 +133,7 @@ export default function Topbar({ quiz }: { quiz: Quiz }) {
               className="w-full flex items-center justify-start gap-2"
               onClick={() => {
                 setSheetOpen(false);
-                window.open(`/reply/${quiz?.id}`, "_blank");
+                router.push(`/reply/${quiz?.id}`);
               }}
             >
               <IconEye size={16} /> Ver cuestionario
