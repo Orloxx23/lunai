@@ -36,7 +36,7 @@ export async function generateMetadata(
     .single();
 
   return {
-    title: `${(data as Quiz)?.title}`,
+    title: `${(data as Quiz)?.title}` || "Cuestionario sin título - " + APP_NAME,
     description: data?.description || "Potenciado por " + APP_NAME,
   };
 }

@@ -15,7 +15,7 @@ import {
 import FileUploader from "@/components/file-uploader";
 import { createClient } from "@/utils/supabase/client";
 import { useEditor } from "@/context/EditorContext";
-import * as tus from "tus-js-client"; // Importa tus-js-client
+import * as tus from "tus-js-client";
 
 export default function UploadContentOnQuestion({
   question,
@@ -44,7 +44,7 @@ export default function UploadContentOnQuestion({
         retryDelays: [0, 3000, 5000, 10000, 20000],
         headers: {
           authorization: `Bearer ${session?.access_token}`,
-          "x-upsert": "true", // Opcional: sobrescribe archivos existentes
+          "x-upsert": "true",
         },
         uploadDataDuringCreation: true,
         removeFingerprintOnSuccess: true, // Permite volver a subir el mismo archivo
