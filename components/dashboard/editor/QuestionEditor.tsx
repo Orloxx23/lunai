@@ -13,14 +13,21 @@ import useDebounced from "@/hooks/use-debounced";
 import { generateUUID } from "@/lib/functions/editor";
 import { Option, Question } from "@/lib/types/editorTypes";
 import { createClient } from "@/utils/supabase/client";
-import { IconPhoto, IconTrash, IconX } from "@tabler/icons-react";
+import {
+  IconGripHorizontal,
+  IconPhoto,
+  IconTrash,
+  IconX,
+} from "@tabler/icons-react";
 import { useEffect, useState } from "react";
 import AnswerEditor from "./AnswerEditor";
 import UploadContentOnQuestion from "./UploadContentOnQuestion";
+import { useDraggable } from "@dnd-kit/core";
+import { useSortable } from "@dnd-kit/sortable";
 
 interface Props {
   data: Question;
-  index: number;
+  index?: number;
 }
 
 export default function QuestionEditor({ index, data }: Props) {
@@ -35,6 +42,15 @@ export default function QuestionEditor({ index, data }: Props) {
     options.find((o) => o.isCorrect)?.id || ""
   );
   const [openAnswer, setOpenAnswer] = useState<string>("");
+
+  const { attributes, listeners, setNodeRef, transform } = useSortable({
+    id: data.id,
+  });
+  const style = transform
+    ? {
+        transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
+      }
+    : undefined;
 
   const getOptions = async (questionId: string) => {
     const supabase = createClient();
@@ -178,12 +194,18 @@ export default function QuestionEditor({ index, data }: Props) {
     }
   }, [debouncedQuestionData]);
 
-  useEffect(() => {
-    // console.log(data.correctAnswer);
-  }, [data]);
-
   return (
-    <div className="w-full p-4 rounded-lg border bg-background flex flex-col gap-2 transition duration-300">
+    <div
+      ref={setNodeRef}
+      style={style}
+      className="w-full p-4 rounded-lg border bg-background flex flex-col gap-2 group relative"
+    >
+      <div className="absolute w-full flex justify-center items-center active:cursor-grabbing opacity-0 group-hover:opacity-100 -translate-y-4">
+        <div className="w-fit cursor-grab active:cursor-grabbing text-foreground/20" {...listeners} {...attributes}>
+          <IconGripHorizontal size={16} />
+        </div>
+      </div>
+
       <div className="w-full flex gap-2">
         <Textarea
           placeholder="Pregunta"

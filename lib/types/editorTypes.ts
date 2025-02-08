@@ -29,6 +29,7 @@ export type Question = {
   createdAt?: string;
   correctAnswer?: string;
   image?: string;
+  position: number;
 };
 
 export type Option = {

@@ -18,6 +18,7 @@ type MyContextData = {
   createQuiz: () => void;
   creating: boolean;
   questions: Question[];
+  setQuestions: React.Dispatch<React.SetStateAction<Question[]>>;
   createQuestion: () => void;
   deleteQuestion: (questionId: string) => void;
   updateQuestion: (questionId: string, key: keyof Question, value: any) => void;
@@ -150,6 +151,7 @@ const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
       type: "multiple",
       description: "",
       quizId: quiz?.id || "",
+      position: questions.length,
     };
 
     setQuestions((prev) => [...prev, newQuestion]);
@@ -254,7 +256,7 @@ const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
 
       const data = await res.json();
 
-      const questionInserts = data.questions.map(async (question: any) => {
+      const questionInserts = data.questions.map(async (question: any, index: number) => {
         const newQuestion: Question = {
           id: generateUUID(),
           title: question.title,
@@ -262,6 +264,7 @@ const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
           description: question.description || "",
           quizId: quiz?.id || "",
           correctAnswer: question.correctAnswer || null,
+          position: questions.length + index,
         };
 
         const supabase = createClient();
@@ -303,8 +306,8 @@ const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
         return newQuestion; // Return the newly created question
       });
 
-      const questions = await Promise.all(questionInserts); // Wait for all questions to be inserted
-      setQuestions((prev) => [...prev, ...questions.filter(Boolean)]); // Filter out nulls
+      const _questions = await Promise.all(questionInserts); // Wait for all questions to be inserted
+      setQuestions((prev) => [...prev, ..._questions.filter(Boolean)]); // Filter out nulls
 
       if (callback) callback();
     } catch (err) {
@@ -360,6 +363,7 @@ const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
         createQuiz,
         creating,
         questions,
+        setQuestions,
         createQuestion,
         deleteQuestion,
         updateQuestion,

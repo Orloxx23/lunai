@@ -198,7 +198,9 @@ export default function QuizForm({ quiz, questions, options, user }: Props) {
               />
             </div>
 
-            {questions.map((question) => {
+            {questions.sort(
+              (a, b) => a.position - b.position
+            ).map((question) => {
               return (
                 <div
                   key={question.id}
