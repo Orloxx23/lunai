@@ -77,37 +77,29 @@ export default function EditorBody({ quiz }: Props) {
     if (active.id !== over.id) {
       const oldIndex = questions.findIndex((q) => q.id === active.id);
       const newIndex = questions.findIndex((q) => q.id === over.id);
-
+  
       const updatedQuestions = [...questions];
-      updatedQuestions.splice(
-        newIndex,
-        0,
-        updatedQuestions.splice(oldIndex, 1)[0]
-      );
-
+      const [movedItem] = updatedQuestions.splice(oldIndex, 1);
+      updatedQuestions.splice(newIndex, 0, movedItem);
+  
       setQuestions(updatedQuestions);
-
-      // Swap the positions in Supabase
-      const { error: updateError1 } = await supabase
-        .from("questions")
-        .update({ position: newIndex })
-        .eq("id", active.id);
-
-      const { error: updateError2 } = await supabase
-        .from("questions")
-        .update({ position: oldIndex })
-        .eq("id", over.id);
-
-      if (updateError1 || updateError2) {
-        console.error(
-          "Error updating question positions:",
-          updateError1 || updateError2
-        );
+  
+      // Actualiza las posiciones en la base de datos
+      const updates = updatedQuestions.map((question, index) => ({
+        id: question.id,
+        position: index, // Nueva posición basada en el nuevo orden
+      }));
+  
+      const { error } = await supabase.from("questions").upsert(updates);
+  
+      if (error) {
+        console.error("Error updating question positions:", error);
       }
     }
-
+  
     document.body.style.cursor = "default";
   };
+  
 
   useEffect(() => {
     setQuiz(quiz);
