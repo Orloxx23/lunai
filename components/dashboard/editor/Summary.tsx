@@ -168,7 +168,7 @@ export default function Summary({ updates }: Props) {
               <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
                 <ChartContainer
                   config={
-                    question.type === "true/false"
+                    question.options.length === 2
                       ? { type: { label: "bar" }, dataKey: { label: "count" } }
                       : { type: { label: "pie" } }
                   }

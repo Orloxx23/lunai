@@ -142,7 +142,7 @@ export async function POST(req: Request): Promise<Response> {
     const { object: feedbackResult } = await generateObject({
       model: openai("gpt-4o-mini"),
       schema: feedbackSchema,
-      prompt: `Estas son las respuestas proporcionadas por el usuario:\n\n${JSON.stringify(feedbackPayload)}\n\nPor favor, genera un feedback general dirigido al usuario, explicando con detalle en qué áreas tuvo un buen desempeño y en cuáles necesita mejorar. Asegúrate de ser claro y específico, proporcionando ejemplos concretos de lo que hizo bien y lo que podría hacer de manera diferente. Usa un tono positivo y constructivo, utilizando frases como: 'Has demostrado...', 'Lograste...', 'Es importante que trabajes en...', 'Podrías mejorar en...'.
+      prompt: `Eres un experto pedagogo. Estas son las respuestas proporcionadas por el usuario:\n\n${JSON.stringify(feedbackPayload)}\n\nPor favor, genera un feedback general dirigido al usuario, explicando con detalle en qué áreas tuvo un buen desempeño y en cuáles necesita mejorar. Asegúrate de ser claro y específico, proporcionando ejemplos concretos de lo que hizo bien y lo que podría hacer de manera diferente. Usa un tono positivo y constructivo, utilizando frases como: 'Has demostrado...', 'Lograste...', 'Es importante que trabajes en...', 'Podrías mejorar en...'.
 
 Incluye sugerencias claras y prácticas que el usuario pueda implementar para mejorar en las áreas donde falló. Si detectas patrones o problemas recurrentes en sus respuestas, menciónalos de manera explícita. Además, al final del feedback general, genera una lista de temas o conceptos específicos que el usuario debería estudiar, basándote en las áreas donde tuvo fallos. Estos temas deben ser concretos y relacionados con las preguntas o áreas en las que necesita mejorar.
 
@@ -152,7 +152,7 @@ Además, ten en cuenta lo que se solicita en la pregunta. Si la pregunta pide me
 
 Para las respuestas correctas (incluyendo respuestas abiertas correctas), no es necesario ofrecer feedback sobre áreas de mejora. Solo incluye una felicitación breve y positiva, como por ejemplo: '¡Bien hecho!' o '¡Excelente trabajo!'.
 
-Finalmente, genera un feedback individual para cada pregunta, explicando con precisión en qué destacó el usuario, qué aspectos específicos debería mejorar, y cómo puede ajustar su enfoque en preguntas similares en el futuro. Además, para cada pregunta, indica si la respuesta del usuario es correcta o no (isCorrect). Para preguntas de opción múltiple, usa el valor de isCorrect proporcionado en el payload. Para preguntas abiertas, decide si la respuesta es correcta o no basándote en la idea general proporcionada en la respuesta correcta.`,
+Finalmente, genera un feedback individual para cada pregunta, explicando con precisión en qué destacó el usuario, qué aspectos específicos debería mejorar, y cómo puede ajustar su enfoque en preguntas similares en el futuro, es importante que le digas al usuario cual era la respuesta correcta y/o por que se ha equivocado. Además, para cada pregunta, indica si la respuesta del usuario es correcta o no (isCorrect). Para preguntas de opción múltiple, usa el valor de isCorrect proporcionado en el payload. Para preguntas abiertas, decide si la respuesta es correcta o no basándote en la idea general proporcionada en la respuesta correcta.`,
     });
 
     const { generalFeedback, questionFeedbacks } = feedbackResult;
