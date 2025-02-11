@@ -259,6 +259,10 @@ export default function QuizForm({ quiz, questions, options, user }: Props) {
                       </div>
                     </div>
                   )}
+
+                  <div className="w-full text-xs flex items-center justify-end text-foreground/40">
+                    {question.position + 1}/{questions.length}
+                  </div>
                 </div>
               );
             })}
