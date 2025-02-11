@@ -90,7 +90,7 @@ export default function ReviewPage({
   }, [params.responseId, supabase]);
 
   const goBack = () => {
-    router.push(`/dashboard/editor/${params.id}`);
+    router.push(`/dashboard/editor/${params.id}?view=responses`);
   };
 
   useEffect(() => {

@@ -35,6 +35,7 @@ import {
   restrictToVerticalAxis,
   restrictToFirstScrollableAncestor,
 } from "@dnd-kit/modifiers";
+import { useRouter, useSearchParams } from "next/navigation";
 
 interface Props {
   quiz: Quiz;
@@ -43,7 +44,14 @@ interface Props {
 export default function EditorBody({ quiz }: Props) {
   const { setQuiz, updateQuiz, questions, setQuestions, createQuestion } =
     useEditor();
-  const [view, setView] = useState<"editor" | "responses">("editor");
+  const searchParams = useSearchParams();
+  const router = useRouter();
+
+  const currentView = searchParams.get("view") as "editor" | "responses" | null;
+
+  const [view, setView] = useState<"editor" | "responses">(
+    currentView || "editor"
+  );
   const [responses, setResponses] = useState<any[]>([]);
   const [generatorOpen, setGeneratorOpen] = useState(false);
 
@@ -77,29 +85,28 @@ export default function EditorBody({ quiz }: Props) {
     if (active.id !== over.id) {
       const oldIndex = questions.findIndex((q) => q.id === active.id);
       const newIndex = questions.findIndex((q) => q.id === over.id);
-  
+
       const updatedQuestions = [...questions];
       const [movedItem] = updatedQuestions.splice(oldIndex, 1);
       updatedQuestions.splice(newIndex, 0, movedItem);
-  
+
       setQuestions(updatedQuestions);
-  
+
       // Actualiza las posiciones en la base de datos
       const updates = updatedQuestions.map((question, index) => ({
         id: question.id,
         position: index, // Nueva posición basada en el nuevo orden
       }));
-  
+
       const { error } = await supabase.from("questions").upsert(updates);
-  
+
       if (error) {
         console.error("Error updating question positions:", error);
       }
     }
-  
+
     document.body.style.cursor = "default";
   };
-  
 
   useEffect(() => {
     setQuiz(quiz);
@@ -140,6 +147,7 @@ export default function EditorBody({ quiz }: Props) {
           <Button
             variant={view === "editor" ? "default" : "ghost"}
             onClick={() => {
+              router.replace(`/dashboard/editor/${quiz.id}?view=editor`, {});
               setView("editor");
             }}
             className="w-full"
@@ -149,6 +157,7 @@ export default function EditorBody({ quiz }: Props) {
           <Button
             variant={view === "responses" ? "default" : "ghost"}
             onClick={() => {
+              router.replace(`/dashboard/editor/${quiz.id}?view=responses`, {});
               setView("responses");
             }}
             className="w-full flex gap-1 items-center"

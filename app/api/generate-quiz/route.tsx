@@ -26,6 +26,8 @@ export async function POST(req: Request) {
     schema: questionSchema,
     prompt: `in spanish, with a difficulty ${difficulty}, it generates ${amount} questions where each one must have 4 options where only one can be correct. it is based on the following context: ${context}. it can also generate true or false questions, in this case a maximum of 2 options are allowed. it can also generate open questions.
 
+    please always provide the correct answer for each question. if the question is open, provide an idea or example of the correct answer.
+
     Normally difficulties can be per question type, example:
     - Easy: False or True.
     - Medium: Multiple choice
