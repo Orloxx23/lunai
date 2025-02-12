@@ -3,8 +3,8 @@ import { streamObject } from "ai";
 import { questionSchema } from "./quizSchemas";
 import { createClient } from "@/utils/supabase/server";
 
-// Allow streaming responses up to 30 seconds
-export const maxDuration = 30;
+// Allow streaming responses up to 60 seconds
+export const maxDuration = 60;
 
 export async function POST(req: Request) {
   const supabase = createClient();

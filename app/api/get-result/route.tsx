@@ -39,7 +39,7 @@ const feedbackSchema = z.object({
   ),
 });
 
-// export const maxDuration = 60;
+export const maxDuration = 120;
 
 export async function POST(req: Request): Promise<Response> {
   const {
