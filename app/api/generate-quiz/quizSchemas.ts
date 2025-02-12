@@ -16,7 +16,7 @@ export const questionSchema = z.object({
             )
         )
         .optional(),
-      type: z.enum(["multiple", "open"]).describe("question type (multiple or open)"),
+      type: z.enum(["multiple", "open"]).describe("question type"),
       correctAnswer: z
         .string()
         .optional()
