@@ -39,7 +39,7 @@ const feedbackSchema = z.object({
   ),
 });
 
-export const maxDuration = 60;
+// export const maxDuration = 60;
 
 export async function POST(req: Request): Promise<Response> {
   const {
@@ -120,21 +120,21 @@ export async function POST(req: Request): Promise<Response> {
       (opt: QuestionOption) => opt.isCorrect
     );
 
-    // Para preguntas de opción múltiple, isCorrect se basa en la opción seleccionada
+    // Asegúrate de que isCorrect sea siempre booleano
     const isCorrect =
       question.type === "multiple"
         ? questionOptions.some(
             (opt: QuestionOption) => opt.id === userAnswer && opt.isCorrect
           )
-        : null; // Para preguntas abiertas, isCorrect lo decide la IA
+        : false; // Cambiado de null a false para preguntas abiertas
 
     return {
       questionId: question.id,
       question: question.title,
       userAnswer,
       correctAnswer: correctOption?.title || question.correctAnswer,
-      type: question.type, // Incluimos el tipo de pregunta en el payload
-      isCorrect, // Solo se usa para preguntas de opción múltiple
+      type: question.type,
+      isCorrect,
     };
   });
 
@@ -142,17 +142,7 @@ export async function POST(req: Request): Promise<Response> {
     const { object: feedbackResult } = await generateObject({
       model: openai("gpt-4o-mini"),
       schema: feedbackSchema,
-      prompt: `Eres un experto pedagogo. Estas son las respuestas proporcionadas por el usuario:\n\n${JSON.stringify(feedbackPayload)}\n\nPor favor, genera un feedback general dirigido al usuario, explicando con detalle en qué áreas tuvo un buen desempeño y en cuáles necesita mejorar. Asegúrate de ser claro y específico, proporcionando ejemplos concretos de lo que hizo bien y lo que podría hacer de manera diferente. Usa un tono positivo y constructivo, utilizando frases como: 'Has demostrado...', 'Lograste...', 'Es importante que trabajes en...', 'Podrías mejorar en...'.
-
-Incluye sugerencias claras y prácticas que el usuario pueda implementar para mejorar en las áreas donde falló. Si detectas patrones o problemas recurrentes en sus respuestas, menciónalos de manera explícita. Además, al final del feedback general, genera una lista de temas o conceptos específicos que el usuario debería estudiar, basándote en las áreas donde tuvo fallos. Estos temas deben ser concretos y relacionados con las preguntas o áreas en las que necesita mejorar.
-
-Nota importante para la revisión: Para las respuestas abiertas o de texto (aquellas que no son UUID), ten en cuenta que la respuesta correcta no es una coincidencia exacta, sino una idea general o ejemplos. Por ejemplo, si la respuesta correcta es "Aguardiente, café, colombiana", no esperamos que el usuario responda exactamente eso, sino que su respuesta esté alineada con esa idea general. Si la respuesta del usuario es "Aguardiente", "café" o cualquier otra bebida típica de Colombia, la respuesta debe considerarse correcta. Evalúa si la respuesta del usuario es válida basándote en el contenido y no en una coincidencia exacta.
-
-Además, ten en cuenta lo que se solicita en la pregunta. Si la pregunta pide mencionar solo una cosa (por ejemplo, "Nombra una de las bebidas típicas de Colombia"), el feedback no debe pedirle al usuario que mencione más ejemplos, ya que eso iría en contra de las instrucciones de la pregunta. En su lugar, el feedback debe centrarse en si la respuesta proporcionada es válida y, si es necesario, ofrecer sugerencias adicionales sin contradecir la consigna de la pregunta.
-
-Para las respuestas correctas (incluyendo respuestas abiertas correctas), no es necesario ofrecer feedback sobre áreas de mejora. Solo incluye una felicitación breve y positiva, como por ejemplo: '¡Bien hecho!' o '¡Excelente trabajo!'.
-
-Finalmente, genera un feedback individual para cada pregunta, explicando con precisión en qué destacó el usuario, qué aspectos específicos debería mejorar, y cómo puede ajustar su enfoque en preguntas similares en el futuro, es importante que le digas al usuario cual era la respuesta correcta y/o por que se ha equivocado. Además, para cada pregunta, indica si la respuesta del usuario es correcta o no (isCorrect). Para preguntas de opción múltiple, usa el valor de isCorrect proporcionado en el payload. Para preguntas abiertas, decide si la respuesta es correcta o no basándote en la idea general proporcionada en la respuesta correcta.`,
+      prompt: `Eres un experto pedagogo. Estas son las respuestas proporcionadas por el usuario:\n\n${JSON.stringify(feedbackPayload)}\n\nPor favor, genera un feedback general dirigido al usuario, explicando con detalle en qué áreas tuvo un buen desempeño y en cuáles necesita mejorar. Asegúrate de ser claro y específico, proporcionando ejemplos concretos de lo que hizo bien y lo que podría hacer de manera diferente. Usa un tono positivo y constructivo. Además, ofrece una revisión individual de cada pregunta.`,
     });
 
     const { generalFeedback, questionFeedbacks } = feedbackResult;
@@ -164,18 +154,16 @@ Finalmente, genera un feedback individual para cada pregunta, explicando con pre
       );
 
       if (questionFeedback) {
-        // Para preguntas de opción múltiple, usamos el isCorrect del payload
-        // Para preguntas abiertas, usamos el isCorrect generado por la IA
         const isCorrect =
           question.type === "multiple"
             ? feedbackPayload.find((fb: any) => fb.questionId === question.id)
-                ?.isCorrect
-            : questionFeedback.isCorrect;
+                ?.isCorrect || false
+            : (questionFeedback.isCorrect ?? false);
 
         results.push({
           questionId: question.id,
           userAnswer,
-          isCorrect: isCorrect || false,
+          isCorrect,
           feedback: questionFeedback.feedback,
         });
 
