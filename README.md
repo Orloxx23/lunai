@@ -1,8 +1,3 @@
-## Todo
-
-- [ ] Mejorar los formularios de login y registro
-  - [ ] Remplazar el diseño de olvidaste tu contraseña
-
 <!-- ## Features
 
 - Works across the entire [Next.js](https://nextjs.org) stack
