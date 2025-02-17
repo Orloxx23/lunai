@@ -137,7 +137,7 @@ export default function Summary({ updates }: Props) {
   }, [fetchData]);
 
   if (!questionsSummary.length) {
-    return <div>Cargando...</div>;
+    return <div></div>;
   }
 
   const colors = [
@@ -153,86 +153,92 @@ export default function Summary({ updates }: Props) {
     "#B39DDB",
   ];
 
-  return (
-    <div className="space-y-4">
-      {questionsSummary.map((question, qIndex) => (
-        <>
-          {(question.type === "multiple" || question.type === "true/false") && (
-            <div
-              className="flex flex-col gap-4 bg-background rounded-md border p-4 w-full"
-              key={question.id}
-            >
-              <p className="font-semibold text-xl text-center md:text-left">
-                {question.title}
-              </p>
-              <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
-                <ChartContainer
-                  config={
-                    question.options.length === 2
-                      ? { type: { label: "bar" }, dataKey: { label: "count" } }
-                      : { type: { label: "pie" } }
-                  }
-                  className="w-full md:w-2/3 flex justify-center"
-                >
-                  <PieChart>
-                    <ChartTooltip
-                      cursor={false}
-                      content={<ChartTooltipContent hideLabel />}
-                    />
-                    <Pie
-                      data={question.options}
-                      dataKey="count"
-                      nameKey="title"
-                      stroke="0"
-                    >
-                      {question.options.map((_, index) => (
-                        <Cell
-                          key={index}
-                          fill={colors[index % colors.length]}
-                        />
-                      ))}
-                    </Pie>
-                  </PieChart>
-                </ChartContainer>
-                <div className="w-full md:w-1/3">
-                  <div className="flex flex-col gap-2 justify-start items-start mx-auto w-fit sm:w-auto">
-                    {question.options.map((option) => (
-                      <div
-                        key={option.id}
-                        className="flex items-center gap-2 justify-center md:justify-start"
+  if(updates.length > 0){
+    return (
+      <div className="space-y-4">
+        {questionsSummary.map((question, qIndex) => (
+          <>
+            {(question.type === "multiple" || question.type === "true/false") && (
+              <div
+                className="flex flex-col gap-4 bg-background rounded-md border p-4 w-full"
+                key={question.id}
+              >
+                <p className="font-semibold text-xl text-center md:text-left">
+                  {question.title}
+                </p>
+                <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
+                  <ChartContainer
+                    config={
+                      question.options.length === 2
+                        ? { type: { label: "bar" }, dataKey: { label: "count" } }
+                        : { type: { label: "pie" } }
+                    }
+                    className="w-full md:w-2/3 flex justify-center"
+                  >
+                    <PieChart>
+                      <ChartTooltip
+                        cursor={false}
+                        content={<ChartTooltipContent hideLabel />}
+                      />
+                      <Pie
+                        data={question.options}
+                        dataKey="count"
+                        nameKey="title"
+                        stroke="0"
                       >
+                        {question.options.map((_, index) => (
+                          <Cell
+                            key={index}
+                            fill={colors[index % colors.length]}
+                          />
+                        ))}
+                      </Pie>
+                    </PieChart>
+                  </ChartContainer>
+                  <div className="w-full md:w-1/3">
+                    <div className="flex flex-col gap-2 justify-start items-start mx-auto w-fit sm:w-auto">
+                      {question.options.map((option) => (
                         <div
-                          className="w-4 h-4 rounded-full"
-                          style={{
-                            backgroundColor:
-                              colors[
-                                question.options.indexOf(option) % colors.length
-                              ],
-                          }}
-                        ></div>
-                        <span className="text-sm">{option.title}</span>
-                      </div>
-                    ))}
+                          key={option.id}
+                          className="flex items-center gap-2 justify-center md:justify-start"
+                        >
+                          <div
+                            className="w-4 h-4 rounded-full"
+                            style={{
+                              backgroundColor:
+                                colors[
+                                  question.options.indexOf(option) % colors.length
+                                ],
+                            }}
+                          ></div>
+                          <span className="text-sm">{option.title}</span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          )}
-
-          {question.type === "open" && (
-            <div className="flex flex-col gap-2 bg-background rounded-md border p-4">
-              <p className="font-semibold text-xl">{question.title}</p>
-              <div className="flex flex-col gap-2 max-h-96 overflow-y-auto">
-                {question.openAnswers.map((answer, index) => (
-                  <div key={index} className="p-2 bg-accent rounded-md">
-                    {answer}
-                  </div>
-                ))}
+            )}
+  
+            {question.type === "open" && (
+              <div className="flex flex-col gap-2 bg-background rounded-md border p-4">
+                <p className="font-semibold text-xl">{question.title}</p>
+                <div className="flex flex-col gap-2 max-h-96 overflow-y-auto">
+                  {question.openAnswers.map((answer, index) => (
+                    <div key={index} className="p-2 bg-accent rounded-md">
+                      {answer}
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
-        </>
-      ))}
-    </div>
-  );
+            )}
+          </>
+        ))}
+      </div>
+    );
+  } else {
+    return (
+      <p className="w-full flex justify-center items-center opacity-50">No hay respuestas</p>
+    )
+  }
 }

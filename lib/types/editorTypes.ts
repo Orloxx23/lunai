@@ -18,6 +18,7 @@ export type Quiz = {
   isPublic: boolean;
   state: "public" | "private" | "exclusive";
   folderId?: string;
+  maxScore?: number;
 };
 
 export type Question = {

@@ -35,6 +35,7 @@ import {
 } from "@/components/ui/sheet";
 import { APP_NAME } from "@/lib/constants/general";
 import { useRouter } from "next-nprogress-bar";
+import Config from "./Config";
 
 export default function Topbar({ quiz }: { quiz: Quiz }) {
   const {
@@ -91,6 +92,7 @@ export default function Topbar({ quiz }: { quiz: Quiz }) {
             <IconEye size={24} />
           </Button>
           <StateButton state={state} setState={setState} />
+          <Config />
           <Button
             variant={"ghost"}
             size={"icon"}
@@ -103,6 +105,7 @@ export default function Topbar({ quiz }: { quiz: Quiz }) {
               <IconDeviceFloppy size={24} />
             )}
           </Button>
+          
           <ShareButton />
           <UserMenu />
         </div>
@@ -164,6 +167,8 @@ export default function Topbar({ quiz }: { quiz: Quiz }) {
               <div className="select-none">Visiblidad:</div>
               <StateButton state={state} setState={setState} />
             </div>
+
+            <Config />
 
             <ShareButton />
             <div className="flex-1"></div>

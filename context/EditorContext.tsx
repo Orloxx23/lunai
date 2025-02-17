@@ -10,6 +10,7 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 
 type MyContextData = {
   quiz: Quiz | null;
+  getQuiz: (id: string) => void;
   setQuiz: (quiz: Quiz) => void;
   updateQuiz: (key: keyof Quiz, value: any) => void;
   saving: boolean;
@@ -66,6 +67,24 @@ const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   const [creating, setCreating] = useState(false);
+
+  const getQuiz = async (id: string) => {
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from("quizzes")
+      .select("*")
+      .eq("id", id)
+      .single();
+
+    if (error) {
+      console.error("Error getting quiz", error);
+    }
+
+    if (data) {
+      setQuiz(data);
+    }
+  };
+
   const createQuiz = async () => {
     const supabase = createClient();
     setCreating(true);
@@ -256,55 +275,57 @@ const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
 
       const data = await res.json();
 
-      const questionInserts = data.questions.map(async (question: any, index: number) => {
-        const newQuestion: Question = {
-          id: generateUUID(),
-          title: question.title,
-          type: question.type,
-          description: question.description || "",
-          quizId: quiz?.id || "",
-          correctAnswer: question.correctAnswer || null,
-          position: questions.length + index,
-        };
-
-        const supabase = createClient();
-        const { data: questionData, error: questionError } = await supabase
-          .from("questions")
-          .insert([newQuestion])
-          .select();
-
-        if (questionError) {
-          console.error("Error creating question", questionError);
-          return null; // Handle the question error by returning null
-        }
-
-        const optionsInserts = question.options.map(async (option: any) => {
-          const newOption: Option = {
+      const questionInserts = data.questions.map(
+        async (question: any, index: number) => {
+          const newQuestion: Question = {
             id: generateUUID(),
-            title: option.title,
-            description: option.description || "",
-            isCorrect: option.isCorrect,
-            questionId: newQuestion.id,
+            title: question.title,
+            type: question.type,
+            description: question.description || "",
+            quizId: quiz?.id || "",
+            correctAnswer: question.correctAnswer || null,
+            position: questions.length + index,
           };
 
-          const { data: optionData, error: optionError } = await supabase
-            .from("options")
-            .insert([newOption])
+          const supabase = createClient();
+          const { data: questionData, error: questionError } = await supabase
+            .from("questions")
+            .insert([newQuestion])
             .select();
 
-          if (optionError) {
-            console.error("Error creating option", optionError);
-            return null; // Handle the option error
+          if (questionError) {
+            console.error("Error creating question", questionError);
+            return null; // Handle the question error by returning null
           }
 
-          return newOption; // Return the newly created option
-        });
+          const optionsInserts = question.options.map(async (option: any) => {
+            const newOption: Option = {
+              id: generateUUID(),
+              title: option.title,
+              description: option.description || "",
+              isCorrect: option.isCorrect,
+              questionId: newQuestion.id,
+            };
 
-        const options = await Promise.all(optionsInserts); // Wait for all options to be inserted
-        setGeneratedOptions((prev) => [...prev, ...options.filter(Boolean)]); // Filter out nulls
+            const { data: optionData, error: optionError } = await supabase
+              .from("options")
+              .insert([newOption])
+              .select();
 
-        return newQuestion; // Return the newly created question
-      });
+            if (optionError) {
+              console.error("Error creating option", optionError);
+              return null; // Handle the option error
+            }
+
+            return newOption; // Return the newly created option
+          });
+
+          const options = await Promise.all(optionsInserts); // Wait for all options to be inserted
+          setGeneratedOptions((prev) => [...prev, ...options.filter(Boolean)]); // Filter out nulls
+
+          return newQuestion; // Return the newly created question
+        }
+      );
 
       const _questions = await Promise.all(questionInserts); // Wait for all questions to be inserted
       setQuestions((prev) => [...prev, ..._questions.filter(Boolean)]); // Filter out nulls
@@ -356,6 +377,7 @@ const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
     <EditorContext.Provider
       value={{
         quiz,
+        getQuiz,
         setQuiz,
         updateQuiz,
         saving,
