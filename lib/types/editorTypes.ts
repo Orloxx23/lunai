@@ -31,6 +31,7 @@ export type Question = {
   correctAnswer?: string;
   image?: string;
   position: number;
+  weight: number;
 };
 
 export type Option = {

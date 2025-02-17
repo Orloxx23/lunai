@@ -41,6 +41,29 @@ const feedbackSchema = z.object({
 
 export const maxDuration = 60;
 
+async function getIsCorrectWithIA(
+  question: string,
+  userAnswer: string,
+  correctAnswer: string
+): Promise<boolean> {
+  const { object: result } = await generateObject({
+    model: openai("gpt-4o-mini"),
+    schema: z.object({
+      isCorrect: z.boolean(),
+    }),
+    prompt: `
+      Esta es una pregunta de prueba:
+      ${question}
+      Respuesta del usuario: ${userAnswer}
+      Idea general o respuestas esperada: ${correctAnswer}
+      ¿La respuesta del usuario es correcta?
+      Intenta ser un poco flexible en base a la respuesta esperada
+      `,
+  });
+
+  return result.isCorrect;
+}
+
 export async function POST(req: Request): Promise<Response> {
   const {
     email,
@@ -111,7 +134,7 @@ export async function POST(req: Request): Promise<Response> {
   let correctAnswersCount = 0;
 
   // Preparar el payload para el feedback
-  const feedbackPayload = questions.map((question: any) => {
+  const feedbackPayloadPromises = questions.map(async (question: any) => {
     const userAnswer = answers[question.id];
     const questionOptions = options.filter(
       (opt: QuestionOption) => opt.questionId === question.id
@@ -120,13 +143,16 @@ export async function POST(req: Request): Promise<Response> {
       (opt: QuestionOption) => opt.isCorrect
     );
 
-    // Asegúrate de que isCorrect sea siempre booleano
     const isCorrect =
       question.type === "multiple"
         ? questionOptions.some(
             (opt: QuestionOption) => opt.id === userAnswer && opt.isCorrect
           )
-        : false; // Cambiado de null a false para preguntas abiertas
+        : await getIsCorrectWithIA(
+            question.title,
+            userAnswer,
+            question.correctAnswer
+          );
 
     return {
       questionId: question.id,
@@ -139,10 +165,23 @@ export async function POST(req: Request): Promise<Response> {
   });
 
   try {
+    const feedbackPayload = await Promise.all(feedbackPayloadPromises);
     const { object: feedbackResult } = await generateObject({
       model: openai("gpt-4o-mini"),
       schema: feedbackSchema,
-      prompt: `Eres un experto pedagogo. Estas son las respuestas proporcionadas por el usuario:\n\n${JSON.stringify(feedbackPayload)}\n\nPor favor, genera un feedback general dirigido al usuario, explicando con detalle en qué áreas tuvo un buen desempeño y en cuáles necesita mejorar. Asegúrate de ser claro y específico, proporcionando ejemplos concretos de lo que hizo bien y lo que podría hacer de manera diferente. Usa un tono positivo y constructivo. Además, ofrece una revisión individual de cada pregunta.`,
+      temperature: 1,
+      prompt: `
+        Eres un experto pedagogo.
+        Estas son las respuestas proporcionadas por el usuario:\n\n${JSON.stringify(feedbackPayload)}\n\nPor favor, genera un feedback general dirigido al usuario, explicando con detalle en qué áreas tuvo un buen desempeño y en cuáles necesita mejorar.
+        Asegúrate de ser claro y específico, proporcionando ejemplos concretos de lo que hizo bien y lo que podría hacer de manera diferente. Usa un tono positivo y constructivo.
+        Además, ofrece una revisión individual de cada pregunta.
+        
+        En el feedback para cada pregunta, Debemos incluir lo siguiente:
+        - Explicar por qué la respuesta es incorrecta: Mostrar una breve explicación de por qué la opción elegida es errónea.
+        - Explicar por qué la respuesta correcta lo es: Dar una justificación clara de la respuesta correcta.
+        - Incluir ejemplos específicos: Si aplica, comparar la respuesta equivocada con la correcta (ejemplo: fotosíntesis vs. respiración celular).
+        
+      `,
     });
 
     const { generalFeedback, questionFeedbacks } = feedbackResult;
