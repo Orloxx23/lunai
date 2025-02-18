@@ -15,7 +15,9 @@ import { Option, Question } from "@/lib/types/editorTypes";
 import { createClient } from "@/utils/supabase/client";
 import {
   IconGripHorizontal,
+  IconNumber100Small,
   IconPhoto,
+  IconProgressCheck,
   IconTrash,
   IconX,
 } from "@tabler/icons-react";
@@ -24,6 +26,7 @@ import AnswerEditor from "./AnswerEditor";
 import UploadContentOnQuestion from "./UploadContentOnQuestion";
 import { useDraggable } from "@dnd-kit/core";
 import { useSortable } from "@dnd-kit/sortable";
+import { Input } from "@/components/ui/input";
 
 interface Props {
   data: Question;
@@ -32,8 +35,15 @@ interface Props {
 
 export default function QuestionEditor({ index, data }: Props) {
   const supabase = createClient();
-  const { deleteQuestion, updateQuestion, setSaving, generatedOptions } =
-    useEditor();
+  const {
+    deleteQuestion,
+    updateQuestion,
+    setSaving,
+    generatedOptions,
+    quiz,
+    updateQuestionWeight,
+    calculateWeight,
+  } = useEditor();
 
   const [questionData, setQuestionData] = useState<Question>(data);
   const debouncedQuestionData = useDebounced(questionData, 700);
@@ -41,7 +51,7 @@ export default function QuestionEditor({ index, data }: Props) {
   const [tempSelectedOption, setTempSelectedOption] = useState<string | null>(
     options.find((o) => o.isCorrect)?.id || ""
   );
-  const [openAnswer, setOpenAnswer] = useState<string>("");
+  const [weight, setWeight] = useState<number>(100);
 
   const { attributes, listeners, setNodeRef, transform } = useSortable({
     id: data.id,
@@ -173,6 +183,7 @@ export default function QuestionEditor({ index, data }: Props) {
   useEffect(() => {
     if (data) {
       getOptions(data.id);
+      setWeight(data.weight);
     }
   }, [data]);
 
@@ -201,12 +212,89 @@ export default function QuestionEditor({ index, data }: Props) {
       className="w-full p-4 rounded-lg border bg-background flex flex-col gap-2 group relative"
     >
       <div className="absolute w-full flex justify-center items-center active:cursor-grabbing opacity-0 group-hover:opacity-100 -translate-y-4">
-        <div className="w-fit cursor-grab active:cursor-grabbing text-foreground/20" {...listeners} {...attributes}>
+        <div
+          className="w-fit cursor-grab active:cursor-grabbing text-foreground/20"
+          {...listeners}
+          {...attributes}
+        >
           <IconGripHorizontal size={16} />
         </div>
       </div>
 
-      <div className="w-full flex gap-2">
+      <div className="w-full flex flex-col gap-2">
+        <div className="w-full flex gap-2 items-center justify-end flex-wrap">
+          <UploadContentOnQuestion question={data} callback={getQuestion} />
+
+          <Select
+            value={data.type}
+            onValueChange={(e) => {
+              updateQuestion(data.id, "type", e);
+            }}
+          >
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Tipo de pregunta" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="multiple">Selección múltiple</SelectItem>
+              <SelectItem value="open">Respuesta abierta</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <div className="w-fit flex h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50">
+            <Input
+              value={weight}
+              onChange={(e) => {
+                setWeight(parseFloat(e.target.value));
+                updateQuestionWeight(data.id, parseFloat(e.target.value));
+              }}
+              type="number"
+              className="w-16 p-0 h-fit m-0 outline-0 border-0 ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 rounded-none"
+              step={0.01}
+              min={0}
+            />
+            <button
+              onClick={() => {
+                const newWeight = calculateWeight(weight);
+                setWeight(newWeight);
+                updateQuestionWeight(data.id, parseFloat(newWeight.toFixed(2)));
+              }}
+            >
+              <IconProgressCheck size={18} />
+            </button>
+          </div>
+
+          <div>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => {
+                deleteQuestion(data.id);
+              }}
+            >
+              <IconTrash size={24} />
+            </Button>
+          </div>
+        </div>
+
+        {questionData.image && (
+          <div className="relative w-full max-h-96 bg-accent rounded-lg overflow-hidden">
+            <Button
+              variant="secondary"
+              size="icon"
+              className="absolute top-2 right-2"
+              onClick={removeImage}
+            >
+              <IconX size={18} />
+            </Button>
+            <img
+              src={questionData.image}
+              alt="question"
+              className="w-full h-full object-contain rounded-lg"
+              draggable={false}
+            />
+          </div>
+        )}
+
         <Textarea
           placeholder="Pregunta"
           value={questionData.title}
@@ -215,55 +303,7 @@ export default function QuestionEditor({ index, data }: Props) {
           }}
           className="text-xl font-bold border-0 focus:border-2 resize-none"
         />
-
-        <UploadContentOnQuestion question={data} callback={getQuestion} />
-
-        <Select
-          value={data.type}
-          onValueChange={(e) => {
-            updateQuestion(data.id, "type", e);
-          }}
-        >
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Tipo de pregunta" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="multiple">Selección múltiple</SelectItem>
-            <SelectItem value="open">Respuesta abierta</SelectItem>
-          </SelectContent>
-        </Select>
-
-        <div>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => {
-              deleteQuestion(data.id);
-            }}
-          >
-            <IconTrash size={24} />
-          </Button>
-        </div>
       </div>
-
-      {questionData.image && (
-        <div className="relative w-full max-h-96 bg-accent rounded-lg overflow-hidden">
-          <Button
-            variant="secondary"
-            size="icon"
-            className="absolute top-2 right-2"
-            onClick={removeImage}
-          >
-            <IconX size={18} />
-          </Button>
-          <img
-            src={questionData.image}
-            alt="question"
-            className="w-full h-full object-contain rounded-lg"
-            draggable={false}
-          />
-        </div>
-      )}
 
       <div className="flex flex-col gap-2">
         {data.type === "multiple" && (

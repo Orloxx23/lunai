@@ -109,7 +109,7 @@ export async function POST(req: Request): Promise<Response> {
 
   const { data: questions, error: questionError } = await supabase
     .from("questions")
-    .select("id, title, type, correctAnswer")
+    .select("id, title, type, correctAnswer, weight")
     .eq("quizId", quizId);
 
   if (questionError || !questions || questions.length === 0) {
@@ -206,7 +206,9 @@ export async function POST(req: Request): Promise<Response> {
           feedback: questionFeedback.feedback,
         });
 
-        if (isCorrect) correctAnswersCount++;
+        console.log("Question feedback:", question.weight, isCorrect);
+        if (isCorrect) correctAnswersCount += question.weight;
+        console.log("Correct answers count:", correctAnswersCount);
 
         const { error: questionResponseError } = await supabase
           .from("question_responses")

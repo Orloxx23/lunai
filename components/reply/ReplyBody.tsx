@@ -198,74 +198,94 @@ export default function QuizForm({ quiz, questions, options, user }: Props) {
               />
             </div>
 
-            {questions.sort(
-              (a, b) => a.position - b.position
-            ).map((question) => {
-              return (
-                <div
-                  key={question.id}
-                  className="w-full p-4 rounded-lg border bg-background flex flex-col gap-2 transition duration-300"
-                >
-                  {question.image && (
-                    <img
-                      src={question.image}
-                      alt="Question image"
-                      className="w-full rounded-md object-cover max-h-96 mx-auto mb-2 bg-accent"
-                      draggable={false}
-                      height={384}
-                    />
-                  )}
-
-                  <FormField
-                    control={form.control}
-                    name={`answers.${question.id}`}
-                    render={({ field }) => (
-                      <FormItem className="space-y-2">
-                        <FormLabel className="text-xl">
-                          {question.title}
-                        </FormLabel>
-                        <FormControl
-                          className={
-                            finished
-                              ? "pointer-events-none"
-                              : "pointer-events-auto"
-                          }
-                        >
-                          {renderQuestionInput(question, field)}
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
+            {questions
+              .sort((a, b) => a.position - b.position)
+              .map((question) => {
+                return question.title.trim().length > 0 &&
+                  (question.type === "open" ||
+                    options.filter((o) => o.questionId === question.id).length >
+                      1) ? (
+                  <div
+                    key={question.id}
+                    className="w-full p-4 rounded-lg border bg-background flex flex-col gap-2 transition duration-300"
+                  >
+                    {question.image && (
+                      <img
+                        src={question.image}
+                        alt="Question image"
+                        className="w-full rounded-md object-cover max-h-96 mx-auto mb-2 bg-accent"
+                        draggable={false}
+                        height={384}
+                      />
                     )}
-                  />
-                  {finished && !loading && result && (
-                    <div className="flex flex-col gap-2">
-                      {result?.results?.find((r) => r.questionId === question.id)
-                        ?.isCorrect ? (
-                        <div className="rounded-md flex gap-2 items-center p-2 bg-green-500/10">
-                          <IconCheck className="text-green-500" />
-                          <div className="text-green-500 font-medium">Correcto</div>
-                        </div>
-                      ) : (
-                        <div className="rounded-md flex gap-2 items-center p-2 bg-red-500/10">
-                          <IconX className="text-red-500" />
-                          <div className="text-red-500 font-medium">Incorrecto</div>
-                        </div>
+
+                    <FormField
+                      control={form.control}
+                      name={`answers.${question.id}`}
+                      render={({ field }) => (
+                        <FormItem className="space-y-2">
+                          <FormLabel className="text-xl">
+                            {question.title}
+                          </FormLabel>
+                          <FormControl
+                            className={
+                              finished
+                                ? "pointer-events-none"
+                                : "pointer-events-auto"
+                            }
+                          >
+                            {renderQuestionInput(question, field)}
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
                       )}
-                      <div className="text-sm text-foreground p-2 bg-accent rounded-md">
+                    />
+                    {finished && !loading && result && (
+                      <div className="flex flex-col gap-2">
                         {result?.results?.find(
                           (r) => r.questionId === question.id
-                        )?.feedback ||
-                          (question.type === "open" && "No feedback provided")}
+                        )?.isCorrect ? (
+                          <div className="rounded-md flex gap-2 items-center p-2 bg-green-500/10">
+                            <IconCheck className="text-green-500" />
+                            <div className="text-green-500 font-medium">
+                              Correcto
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="rounded-md flex gap-2 items-center p-2 bg-red-500/10">
+                            <IconX className="text-red-500" />
+                            <div className="text-red-500 font-medium">
+                              Incorrecto
+                            </div>
+                          </div>
+                        )}
+                        <div className="text-sm text-foreground p-2 bg-accent rounded-md">
+                          {result?.results?.find(
+                            (r) => r.questionId === question.id
+                          )?.feedback ||
+                            (question.type === "open" &&
+                              "No feedback provided")}
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )}
 
-                  <div className="w-full text-xs flex items-center justify-end text-foreground/40">
-                    {question.position + 1}/{questions.length}
+                    <div className="w-full text-xs flex items-center justify-end text-foreground/40">
+                      {question.position + 1}/
+                      {
+                        questions.filter(
+                          (q) =>
+                            q.title.trim().length > 0 &&
+                            (q.type === "open" ||
+                              options.filter((o) => o.questionId === q.id)
+                                .length > 1)
+                        ).length
+                      }
+                    </div>
                   </div>
-                </div>
-              );
-            })}
+                ) : (
+                  <></>
+                );
+              })}
 
             <Button
               disabled={loading || finished || !user}
@@ -312,11 +332,11 @@ export default function QuizForm({ quiz, questions, options, user }: Props) {
               ) : (
                 <div className="flex flex-col gap-4 p-8 size-full justify-center items-center">
                   <div className="text-7xl font-bold flex items-center justify-center gap-2 ">
-                    <Separator className="w-2/3" />
+                    
                     <p className="text-primary">
-                      {result?.score}/{questions.length}
+                      {result?.score}/{quiz.maxScore}
                     </p>
-                    <Separator className="w-2/3" />
+                    
                   </div>
                   <div className="w-full flex-1 overflow-y-auto p-4 bg-accent rounded-md font-mono">
                     {htmlFeedback && (

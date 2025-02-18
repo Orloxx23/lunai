@@ -60,7 +60,9 @@ export default function ReviewPage({
 
       const { data: questions, error: questionsError } = await supabase
         .from("questions")
-        .select("id, title, description, type, options (id, title, isCorrect)")
+        .select(
+          "id, title, description, type, weight, options (id, title, isCorrect)"
+        )
         .eq("quizId", response.quizId);
 
       if (questionsError) throw questionsError;
@@ -127,9 +129,9 @@ export default function ReviewPage({
 
     setQuestionsData(updatedQuestionsData);
 
-    const newScore = updatedQuestionsData.filter(
-      (question) => question.userAnswerData.isCorrect
-    ).length;
+    const newScore = updatedQuestionsData
+      .filter((question) => question.userAnswerData.isCorrect)
+      .reduce((total, question) => total + (question.weight || 0), 0);
 
     setLoadingChanges(true);
 
@@ -179,7 +181,7 @@ export default function ReviewPage({
                 <div className="w-ful flex items-center justify-between">
                   <p className="text-2xl font-semibold">{userData.username}</p>
                   <p className="text-2xl text-foreground">
-                    {userData.score}/{questionsData.length}
+                    {userData.score}/{quiz?.maxScore}
                   </p>
                 </div>
                 <div className="w-ful flex items-center justify-between">
@@ -222,7 +224,7 @@ export default function ReviewPage({
 
             <Select
               disabled={loadingChanges}
-              value={question.userAnswerData.isCorrect ? "true" : "false"}
+              value={question.userAnswerData?.isCorrect ? "true" : "false"}
               onValueChange={(e) => {
                 handleChangeResult(question.id, e === "true");
               }}

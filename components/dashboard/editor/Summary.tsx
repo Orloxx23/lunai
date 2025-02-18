@@ -161,7 +161,7 @@ export default function Summary({ updates }: Props) {
             {(question.type === "multiple" || question.type === "true/false") && (
               <div
                 className="flex flex-col gap-4 bg-background rounded-md border p-4 w-full"
-                key={question.id}
+                key={question.id || qIndex}
               >
                 <p className="font-semibold text-xl text-center md:text-left">
                   {question.title}
@@ -221,7 +221,7 @@ export default function Summary({ updates }: Props) {
             )}
   
             {question.type === "open" && (
-              <div className="flex flex-col gap-2 bg-background rounded-md border p-4">
+              <div key={question.id || qIndex} className="flex flex-col gap-2 bg-background rounded-md border p-4">
                 <p className="font-semibold text-xl">{question.title}</p>
                 <div className="flex flex-col gap-2 max-h-96 overflow-y-auto">
                   {question.openAnswers.map((answer, index) => (

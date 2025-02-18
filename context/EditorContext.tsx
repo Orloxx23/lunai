@@ -31,6 +31,9 @@ type MyContextData = {
   ) => void;
   generatedOptions: Option[];
   generating: boolean;
+  updateQuestionWeight: (questionId: string, newWeight: number) => void;
+  scoreError: string;
+  calculateWeight: (currentWeight: number) => number;
 };
 
 const EditorContext = createContext<MyContextData | undefined>(undefined);
@@ -48,6 +51,7 @@ const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
     description: "",
     isPublic: false,
     state: "private",
+    maxScore: 100,
   });
   const [questions, setQuestions] = useState<Question[]>([]);
   const [generatedOptions, setGeneratedOptions] = useState<Option[]>([]);
@@ -56,7 +60,11 @@ const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
   const [questionsGeted, setQuestionsGeted] = useState(false);
 
   const [saving, setSaving] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [scoreError, setScoreError] = useState("");
+
   const debouncedQuiz = useDebounced(quiz, 700);
+
   const updateQuiz = (key: keyof Quiz, value: any) => {
     setQuiz((prev) => {
       return {
@@ -65,8 +73,6 @@ const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
       };
     });
   };
-
-  const [creating, setCreating] = useState(false);
 
   const getQuiz = async (id: string) => {
     const supabase = createClient();
@@ -121,6 +127,12 @@ const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const saveQuiz = async () => {
     if (!quiz?.id) return; // No guardes si no hay ID
+    const totalWeight = questions.reduce((sum, q) => sum + q.weight, 0);
+    if (totalWeight !== quiz?.maxScore) {
+      setScoreError(
+        `El total de los pesos (${totalWeight.toFixed(2)}) no coincide con el puntaje máximo de ${quiz?.maxScore}`
+      );
+    }
 
     setSaving(true);
 
@@ -156,14 +168,41 @@ const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
 
     if (error) {
       console.error("Error getting questions", error);
+      return;
     }
 
     if (data) {
+      // Respeta los pesos almacenados en la base de datos
       setQuestions(data);
     }
   };
 
   const createQuestion = async () => {
+    if (questions.length > 0) {
+      // Ajustar el peso de la última pregunta antes de agregar una nueva
+      const lastQuestion = questions[questions.length - 1];
+      const newWeightForLastQuestion = parseFloat(
+        (lastQuestion.weight / 2).toFixed(2)
+      ); // Dividimos el peso de la última pregunta
+
+      // Actualizamos el peso de la última pregunta
+      const updatedQuestions = questions.map((q, index) =>
+        index === questions.length - 1
+          ? { ...q, weight: newWeightForLastQuestion }
+          : q
+      );
+
+      setQuestions(updatedQuestions);
+
+      // Actualizamos el peso de la última pregunta en la base de datos
+      const supabase = createClient();
+      await supabase
+        .from("questions")
+        .update({ weight: newWeightForLastQuestion })
+        .eq("id", lastQuestion.id);
+    }
+
+    // Crear la nueva pregunta con el mismo peso que la última pregunta ajustada
     const newQuestion: Question = {
       id: generateUUID(),
       title: "",
@@ -171,10 +210,14 @@ const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
       description: "",
       quizId: quiz?.id || "",
       position: questions.length,
+      weight:
+        questions.length > 0 ? questions[questions.length - 1].weight / 2 : 1, // Asignar el mismo peso que la última pregunta ajustada
     };
 
+    // Agregar la nueva pregunta al estado
     setQuestions((prev) => [...prev, newQuestion]);
 
+    // Guardar la nueva pregunta en la base de datos
     const supabase = createClient();
     const { data, error } = await supabase
       .from("questions")
@@ -183,10 +226,11 @@ const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
 
     if (error) {
       console.error("Error creating question", error);
-      setQuestions((prev) => prev.filter((q) => q.id !== newQuestion.id));
+      setQuestions((prev) => prev.filter((q) => q.id !== newQuestion.id)); // Revertir si hay un error
     }
 
     if (data) {
+      // Pregunta creada exitosamente
     }
   };
 
@@ -224,37 +268,21 @@ const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
     key: keyof Question,
     value: any
   ) => {
-    const questionToUpdate: Question | null | undefined = questions.find(
-      (q) => q.id === questionId
+    setQuestions((prev) =>
+      prev.map((q) => (q.id === questionId ? { ...q, [key]: value } : q))
     );
 
-    if (!questionToUpdate) return;
-
-    const newQuestions = questions.map((q) =>
-      q.id === questionId
-        ? {
-            ...q,
-            [key]: value,
-          }
-        : q
-    );
-
-    setQuestions(newQuestions);
     setSaving(true);
 
     const supabase = createClient();
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from("questions")
       .update({ [key]: value })
-      .eq("id", questionId)
-      .select();
+      .eq("id", questionId);
 
     if (error) {
       console.error("Error updating question", error);
-      getQuestions();
-    }
-
-    if (data) {
+      getQuestions(); // Solo si hay error, recargar desde BD
     }
 
     setSaving(false);
@@ -285,6 +313,7 @@ const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
             quizId: quiz?.id || "",
             correctAnswer: question.correctAnswer || null,
             position: questions.length + index,
+            weight: 1,
           };
 
           const supabase = createClient();
@@ -337,6 +366,59 @@ const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
       setGenerating(false); // Ensure setGenerating is called finally
     }
   };
+
+  // Función para distribuir pesos iniciales con 2 decimales
+  const distributeWeights = (questions: Question[], maxScore: number) => {
+    let weight = maxScore / questions.length;
+    weight = parseFloat(weight.toFixed(2)); // Asegurar máximo 2 decimales
+    return questions.map((q) => ({ ...q, weight }));
+  };
+
+  const validateWeights = () => {
+    const totalWeight = questions.reduce((sum, q) => sum + q.weight, 0);
+    return totalWeight.toFixed(2) === quiz?.maxScore.toFixed(2);
+  };
+
+  // Actualizar el peso de una pregunta con restricciones
+  const updateQuestionWeight = (questionId: string, newWeight: number) => {
+    newWeight = parseFloat(newWeight.toFixed(2)); // máximo 2 decimales
+
+    const updatedQuestions = questions.map((q) =>
+      q.id === questionId ? { ...q, weight: newWeight } : q
+    );
+
+    const totalWeight = updatedQuestions.reduce((sum, q) => sum + q.weight, 0);
+
+    if (totalWeight > quiz?.maxScore) {
+      setScoreError(
+        `El total de los pesos (${totalWeight.toFixed(2)}) supera el puntaje máximo de ${quiz?.maxScore}`
+      );
+      return;
+    } else if (totalWeight < quiz?.maxScore) {
+      setScoreError(
+        `El total de los pesos (${totalWeight.toFixed(2)}) no alcanza el puntaje máximo de ${quiz?.maxScore}`
+      );
+    } else {
+      setScoreError("");
+    }
+
+    updateQuestion(questionId, "weight", newWeight);
+    setQuestions(updatedQuestions);
+  };
+
+  const calculateWeight = (currentWeight: number) => {
+    return (
+      quiz?.maxScore -
+      questions.reduce((sum, q) => sum + q.weight, 0) +
+      currentWeight
+    );
+  };
+
+  useEffect(() => {
+    if (questions.length > 0 && quiz?.maxScore) {
+      setQuestions(distributeWeights(questions, quiz.maxScore));
+    }
+  }, [quiz?.maxScore]); // Solo se ejecuta cuando cambia el puntaje máximo
 
   useEffect(() => {
     if (!quiz || !quiz.id || questionsGeted) return;
@@ -393,6 +475,9 @@ const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
         generateQuestions,
         generatedOptions,
         generating,
+        updateQuestionWeight,
+        scoreError,
+        calculateWeight,
       }}
     >
       {children}

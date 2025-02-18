@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -22,7 +22,7 @@ export default function Config() {
   const supabase = createClient();
 
   const [loading, setLoading] = React.useState<boolean>(false);
-  const [maxScore, setMaxScore] = React.useState<number>(quiz?.maxScore || 100);
+  const [maxScore, setMaxScore] = React.useState<number>(0);
   const [isOpen, setIsOpen] = React.useState<boolean>(false);
 
   const saveConfig = async () => {
@@ -44,6 +44,12 @@ export default function Config() {
     setLoading(false);
     setIsOpen(false);
   };
+
+  useEffect(() => {
+    if (quiz) {
+      setMaxScore(quiz.maxScore);
+    }
+  }, [quiz]);
 
   return (
     <AlertDialog open={isOpen} onOpenChange={setIsOpen}>

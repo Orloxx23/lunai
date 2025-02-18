@@ -36,14 +36,22 @@ import {
   restrictToFirstScrollableAncestor,
 } from "@dnd-kit/modifiers";
 import { useRouter, useSearchParams } from "next/navigation";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { AlertCircle, Terminal } from "lucide-react";
 
 interface Props {
   quiz: Quiz;
 }
 
 export default function EditorBody({ quiz }: Props) {
-  const { setQuiz, updateQuiz, questions, setQuestions, createQuestion } =
-    useEditor();
+  const {
+    setQuiz,
+    updateQuiz,
+    questions,
+    setQuestions,
+    createQuestion,
+    scoreError,
+  } = useEditor();
   const searchParams = useSearchParams();
   const router = useRouter();
 
@@ -141,6 +149,14 @@ export default function EditorBody({ quiz }: Props) {
         setIsOpen={setGeneratorOpen}
         oneQuestion
       />
+
+      {scoreError && (
+        <Alert className="w-[400px] fixed top-20 right-8 z-40">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>¡Cuidado!</AlertTitle>
+          <AlertDescription>{scoreError}</AlertDescription>
+        </Alert>
+      )}
 
       <div className="max-w-3xl mx-auto flex flex-col gap-4">
         <div className="w-full p-2 bg-background flex gap-2 rounded-md border border-boeder">

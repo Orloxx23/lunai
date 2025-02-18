@@ -36,7 +36,8 @@ export async function generateMetadata(
     .single();
 
   return {
-    title: `${(data as Quiz)?.title}` || "Cuestionario sin título - " + APP_NAME,
+    title:
+      `${(data as Quiz)?.title}` || "Cuestionario sin título - " + APP_NAME,
     description: data?.description || "Potenciado por " + APP_NAME,
   };
 }
@@ -69,7 +70,7 @@ export default async function ReplyPage({
   if (quiz) {
     const { data } = await supabase
       .from("questions")
-      .select("id, title, description, type, quizId, position, image")
+      .select("id, title, description, type, quizId, position, image, weight")
       .eq("quizId", quiz.id);
 
     questions = data || [];

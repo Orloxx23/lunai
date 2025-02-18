@@ -38,12 +38,7 @@ import { useRouter } from "next-nprogress-bar";
 import Config from "./Config";
 
 export default function Topbar({ quiz }: { quiz: Quiz }) {
-  const {
-    saving,
-    updateQuiz,
-    saveQuiz,
-    quiz: quizLocal,
-  } = useEditor();
+  const { saving, updateQuiz, saveQuiz, quiz: quizLocal } = useEditor();
   const router = useRouter();
 
   const [state, setState] = useState(quiz?.state);
@@ -85,11 +80,14 @@ export default function Topbar({ quiz }: { quiz: Quiz }) {
           <Button
             size={"icon"}
             variant={"ghost"}
-            onClick={() => {
-              router.push(`/reply/${quiz?.id}`);
-            }}
+            // onClick={() => {
+            //   router.push(`/reply/${quiz?.id}`);
+            // }}
+            asChild
           >
-            <IconEye size={24} />
+            <Link href={`/reply/${quiz?.id}`}>
+              <IconEye size={24} />
+            </Link>
           </Button>
           <StateButton state={state} setState={setState} />
           <Config />
@@ -105,7 +103,7 @@ export default function Topbar({ quiz }: { quiz: Quiz }) {
               <IconDeviceFloppy size={24} />
             )}
           </Button>
-          
+
           <ShareButton />
           <UserMenu />
         </div>

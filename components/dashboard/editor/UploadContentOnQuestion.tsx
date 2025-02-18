@@ -105,7 +105,7 @@ export default function UploadContentOnQuestion({
     <AlertDialog open={open} onOpenChange={setOpen}>
       <AlertDialogTrigger asChild>
         <div className="">
-          <Button size={"icon"} variant={"ghost"}>
+          <Button size={"icon"} variant={"outline"}>
             <IconPhoto />
           </Button>
         </div>
