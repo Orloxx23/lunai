@@ -171,8 +171,6 @@ export async function POST(req: Request): Promise<Response> {
 
   try {
     const feedbackPayload = await Promise.all(feedbackPayloadPromises);
-    console.log("::: Procesando feedbackPayload :::");
-    console.log("🚀 ~ POST ~ feedbackPayload:", feedbackPayload);
     const { object: feedbackResult } = await generateObject({
       model: openai("gpt-4o-mini"),
       schema: feedbackSchema,
