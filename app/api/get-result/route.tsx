@@ -154,10 +154,15 @@ export async function POST(req: Request): Promise<Response> {
             question.correctAnswer
           );
 
+    const optionText = questionOptions.find(
+      (opt: QuestionOption) => opt.id === userAnswer
+    )?.title;
+
     return {
       questionId: question.id,
       question: question.title,
       userAnswer,
+      userAnswerText: optionText,
       correctAnswer: correctOption?.title || question.correctAnswer,
       type: question.type,
       isCorrect,
@@ -166,6 +171,8 @@ export async function POST(req: Request): Promise<Response> {
 
   try {
     const feedbackPayload = await Promise.all(feedbackPayloadPromises);
+    console.log("::: Procesando feedbackPayload :::");
+    console.log("🚀 ~ POST ~ feedbackPayload:", feedbackPayload);
     const { object: feedbackResult } = await generateObject({
       model: openai("gpt-4o-mini"),
       schema: feedbackSchema,
@@ -206,9 +213,7 @@ export async function POST(req: Request): Promise<Response> {
           feedback: questionFeedback.feedback,
         });
 
-        console.log("Question feedback:", question.weight, isCorrect);
         if (isCorrect) correctAnswersCount += question.weight;
-        console.log("Correct answers count:", correctAnswersCount);
 
         const { error: questionResponseError } = await supabase
           .from("question_responses")
