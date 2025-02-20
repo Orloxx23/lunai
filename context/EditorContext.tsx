@@ -39,6 +39,7 @@ type MyContextData = {
   toggleAutoScoring: () => Promise<void>;
   isQuizReady: boolean;
   autoScoring: boolean;
+  loading: boolean;
 };
 
 const EditorContext = createContext<MyContextData | undefined>(undefined);
@@ -49,19 +50,20 @@ const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
   let router = useRouter();
   let pathname = usePathname();
 
-  // El objeto quiz incluye maxScore, pero también tenemos un estado independiente para modificarlo
+  // Estado del quiz (con valor inicial) y estado independiente para maxScore.
+  // Nota: El valor inicial de maxScore es 100, pero al cargar el quiz se actualizará con el valor de la BD.
   const [quiz, setQuiz] = useState<Quiz>({
     id: "",
     name: "",
     title: "",
     description: "",
     isPublic: false,
-    state: "private",
-    maxScore: 100,
+    state: "exclusive",
+    maxScore: -1,
     autoScoring: true,
   });
-  const [maxScore, setMaxScore] = useState<number>(100);
-  // Aplicamos debouncing al maxScore para esperar 700ms antes de propagar cambios
+  const [maxScore, setMaxScore] = useState<number>(quiz.maxScore || -1);
+  // Debouncing para maxScore: se espera 700ms antes de propagar el cambio.
   const debouncedScore = useDebounced(maxScore, 700);
 
   const [questions, setQuestions] = useState<Question[]>([]);
@@ -73,9 +75,27 @@ const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
   const [scoreError, setScoreError] = useState("");
   const [isQuizReady, setIsQuizReady] = useState<boolean>(false);
   const [autoScoring, setAutoScoring] = useState<boolean>(quiz.autoScoring);
+  const [loading, setLoading] = useState(true);
 
   const debouncedQuiz = useDebounced(quiz, 700);
   const supabase = createClient();
+
+  // --- Efecto para cargar el quiz desde la URL ---
+  useEffect(() => {
+    // Suponiendo que la URL es /dashboard/editor/{quizId}
+    const parts = pathname.split("/");
+    const id = parts[parts.length - 1];
+    if (id && id !== "editor") {
+      getQuiz(id);
+    }
+  }, [pathname]);
+
+  // --- Nuevo efecto: si ya existe un quiz (su id no es vacío), forzamos cargarlo desde la BD ---
+  useEffect(() => {
+    if (quiz.id) {
+      getQuiz(quiz.id);
+    }
+  }, [quiz.id]);
 
   const updateQuiz = (key: keyof Quiz, value: any) => {
     setQuiz((prev) => ({
@@ -98,6 +118,9 @@ const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
       setAutoScoring(data.autoScoring);
       setMaxScore(data.maxScore);
     }
+    setTimeout(() => {
+      setLoading(false);
+    }, 700);
   };
 
   const createQuiz = async () => {
@@ -129,7 +152,7 @@ const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
     }, 1000);
   };
 
-  // Al guardar, se actualiza también el maxScore usando debouncedScore
+  // Al guardar, se actualiza maxScore usando debouncedScore.
   const saveQuiz = async () => {
     if (!quiz?.id) return;
     const publicStatus = isQuizReady ? debouncedQuiz?.isPublic : false;
@@ -143,7 +166,7 @@ const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
         state: debouncedQuiz?.state,
         autoScoring: debouncedQuiz?.autoScoring,
         isPublic: publicStatus,
-        maxScore: debouncedScore,
+        maxScore: maxScore === -1 ? undefined : maxScore,
       })
       .eq("id", debouncedQuiz?.id)
       .select();
@@ -167,7 +190,7 @@ const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
-  // Función para repartir los pesos usando maxScore (del estado independiente)
+  // Reparte los pesos usando maxScore (del estado independiente).
   const distributeWeights = (qs: Question[], maxScore: number) => {
     const count = qs.length;
     if (count === 0) return qs;
@@ -420,7 +443,6 @@ const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
   useEffect(() => {
     if (questions.length === 0) return;
     if (quiz.autoScoring) {
-      // En autoScoring, asumimos que se distribuyen correctamente y no mostramos error.
       setIsQuizReady(true);
       setScoreError("");
       return;
@@ -440,7 +462,7 @@ const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   }, [questions, debouncedScore, quiz.autoScoring]);
 
-  // Efecto para actualizar isPublic según isQuizReady: si el quiz está listo se actualiza a true, si no, a false.
+  // Efecto para actualizar isPublic según isQuizReady.
   useEffect(() => {
     if (!quiz.id) return;
     if (isQuizReady && !quiz.isPublic) {
@@ -467,6 +489,33 @@ const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
       })();
     }
   }, [isQuizReady, quiz.id, quiz.isPublic]);
+
+  // Efecto para actualizar el maxScore en la BD y, si está en autoScoring, redistribuir los pesos.
+  useEffect(() => {
+    if (!quiz.id) return;
+    updateQuiz("maxScore", debouncedScore);
+    (async () => {
+      const { error } = await supabase
+        .from("quizzes")
+        .update({ maxScore: debouncedScore })
+        .eq("id", quiz.id);
+      if (error) {
+        console.error("Error updating maxScore", error);
+      }
+      if (quiz.autoScoring && questions.length > 0) {
+        const newQuestions = distributeWeights(questions, debouncedScore);
+        setQuestions(newQuestions);
+        await Promise.all(
+          newQuestions.map((q) =>
+            supabase
+              .from("questions")
+              .update({ weight: q.weight })
+              .eq("id", q.id)
+          )
+        );
+      }
+    })();
+  }, [debouncedScore, quiz.id, quiz.autoScoring, questions.length]);
 
   // Carga las preguntas una sola vez al tener el quiz.
   useEffect(() => {
@@ -499,6 +548,33 @@ const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
     setAutoScoring(quiz.autoScoring);
   }, [quiz]);
 
+  useEffect(() => {
+    if (autoScoring) {
+      (async () => {
+        if (questions.length > 0) {
+          const expectedWeight = parseFloat(
+            (debouncedScore / questions.length).toFixed(2)
+          );
+          const needsUpdate = questions.some(
+            (q) => q.weight !== expectedWeight
+          );
+          if (needsUpdate) {
+            const newQuestions = distributeWeights(questions, debouncedScore);
+            setQuestions(newQuestions);
+            await Promise.all(
+              newQuestions.map((q) =>
+                supabase
+                  .from("questions")
+                  .update({ weight: q.weight })
+                  .eq("id", q.id)
+              )
+            );
+          }
+        }
+      })();
+    }
+  }, [maxScore]);
+
   return (
     <EditorContext.Provider
       value={{
@@ -527,6 +603,7 @@ const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
         toggleAutoScoring,
         isQuizReady,
         autoScoring,
+        loading,
       }}
     >
       {children}

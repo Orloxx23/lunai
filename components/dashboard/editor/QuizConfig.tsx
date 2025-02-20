@@ -9,8 +9,16 @@ import React, { useEffect } from "react";
 import { toast } from "sonner";
 
 export default function QuizConfig() {
-  const { quiz, autoScoring, toggleAutoScoring, getQuiz, setSaving, maxScore, setMaxScore } =
-    useEditor();
+  const {
+    quiz,
+    autoScoring,
+    toggleAutoScoring,
+    getQuiz,
+    setSaving,
+    maxScore,
+    setMaxScore,
+    loading,
+  } = useEditor();
 
   const supabase = createClient();
 
@@ -57,14 +65,18 @@ export default function QuizConfig() {
             El puntaje maximo que se puede obtener en el quiz
           </p>
         </div>
-        <Input
-          type="number"
-          className="w-20"
-          step={0.5}
-          min={0}
-          value={maxScore}
-          onChange={(e) => setMaxScore(Number(e.target.value))}
-        />
+        {loading ? (
+          <div className="w-20 h-10 bg-muted animate-pulse rounded-sm"></div>
+        ) : (
+          <Input
+            type="number"
+            className="w-20"
+            step={0.5}
+            min={0}
+            value={maxScore}
+            onChange={(e) => setMaxScore(Number(e.target.value))}
+          />
+        )}
       </div>
 
       <div className="flex border p-2 rounded-sm gap-2 justify-between items-center">
