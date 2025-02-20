@@ -19,6 +19,7 @@ export type Quiz = {
   state: "public" | "private" | "exclusive";
   folderId?: string;
   maxScore: number;
+  autoScoring: boolean;
 };
 
 export type Question = {

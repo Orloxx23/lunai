@@ -43,6 +43,7 @@ export default function QuestionEditor({ index, data }: Props) {
     quiz,
     updateQuestionWeight,
     calculateWeight,
+    autoScoring,
   } = useEditor();
 
   const [questionData, setQuestionData] = useState<Question>(data);
@@ -248,9 +249,10 @@ export default function QuestionEditor({ index, data }: Props) {
                 updateQuestionWeight(data.id, parseFloat(e.target.value));
               }}
               type="number"
-              className="w-16 p-0 h-fit m-0 outline-0 border-0 ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 rounded-none"
+              className="w-12 p-0 h-fit m-0 outline-0 border-0 ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 rounded-none"
               step={0.01}
               min={0}
+              disabled={autoScoring}
             />
             <button
               onClick={() => {
@@ -258,6 +260,8 @@ export default function QuestionEditor({ index, data }: Props) {
                 setWeight(newWeight);
                 updateQuestionWeight(data.id, parseFloat(newWeight.toFixed(2)));
               }}
+              disabled={autoScoring}
+              className="disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <IconProgressCheck size={18} />
             </button>

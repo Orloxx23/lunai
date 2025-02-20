@@ -38,6 +38,7 @@ import {
 import { useRouter, useSearchParams } from "next/navigation";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle, Terminal } from "lucide-react";
+import QuizConfig from "./QuizConfig";
 
 interface Props {
   quiz: Quiz;
@@ -151,7 +152,7 @@ export default function EditorBody({ quiz }: Props) {
       />
 
       {scoreError && (
-        <Alert className="w-[400px] fixed top-20 right-8 z-40">
+        <Alert className="w-[400px] fixed top-20 right-8 z-40 bg-yellow-500/5 border-yellow-500 text-[#140e02]">
           <AlertCircle className="h-4 w-4" />
           <AlertTitle>¡Cuidado!</AlertTitle>
           <AlertDescription>{scoreError}</AlertDescription>
@@ -189,6 +190,8 @@ export default function EditorBody({ quiz }: Props) {
 
         <div className={`flex flex-col gap-4 ${view !== "editor" && "hidden"}`}>
           <MainInfo />
+
+          <QuizConfig />
 
           <DndContext
             modifiers={[

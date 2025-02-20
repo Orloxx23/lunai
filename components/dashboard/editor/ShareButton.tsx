@@ -27,7 +27,7 @@ import { useEditor } from "@/context/EditorContext";
 
 export default function ShareButton() {
   const [quizLink, setQuizLink] = useState("");
-  const { quiz } = useEditor();
+  const { quiz, isQuizReady } = useEditor();
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -38,7 +38,7 @@ export default function ShareButton() {
   return (
     <AlertDialog>
       <AlertDialogTrigger asChild>
-        <Button>Enviar</Button>
+        <Button disabled={!isQuizReady}>Enviar</Button>
       </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
