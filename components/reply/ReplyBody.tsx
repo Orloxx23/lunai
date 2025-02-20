@@ -225,7 +225,8 @@ export default function QuizForm({ quiz, questions, options, user }: Props) {
                       render={({ field }) => (
                         <FormItem className="space-y-2">
                           <FormLabel className="text-xl">
-                            {question.title}
+                            {question.title}{" "}
+                            <span className="text-xs font-normal">{`(${question.weight} pts)`}</span>
                           </FormLabel>
                           <FormControl
                             className={
@@ -249,6 +250,10 @@ export default function QuizForm({ quiz, questions, options, user }: Props) {
                             <IconCheck className="text-green-500" />
                             <div className="text-green-500 font-medium">
                               Correcto
+                            </div>
+                            <div className="flex-1"></div>
+                            <div className="text-green-500 font-medium">
+                              +{question.weight} pts
                             </div>
                           </div>
                         ) : (
@@ -332,11 +337,9 @@ export default function QuizForm({ quiz, questions, options, user }: Props) {
               ) : (
                 <div className="flex flex-col gap-4 p-8 size-full justify-center items-center">
                   <div className="text-7xl font-bold flex items-center justify-center gap-2 ">
-                    
                     <p className="text-primary">
-                      {result?.score}/{quiz.maxScore}
+                      {result?.score}
                     </p>
-                    
                   </div>
                   <div className="w-full flex-1 overflow-y-auto p-4 bg-accent rounded-md font-mono">
                     {htmlFeedback && (
