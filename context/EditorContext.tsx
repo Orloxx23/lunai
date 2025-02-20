@@ -493,6 +493,7 @@ const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
   // Efecto para actualizar el maxScore en la BD y, si está en autoScoring, redistribuir los pesos.
   useEffect(() => {
     if (!quiz.id) return;
+    if (debouncedScore === -1) return;
     updateQuiz("maxScore", debouncedScore);
     (async () => {
       const { error } = await supabase
