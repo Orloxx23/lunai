@@ -49,7 +49,7 @@ const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
   let router = useRouter();
   let pathname = usePathname();
 
-  // El objeto quiz incluye maxScore, pero también tenemos un estado independiente para poder modificarlo
+  // El objeto quiz incluye maxScore, pero también tenemos un estado independiente para modificarlo
   const [quiz, setQuiz] = useState<Quiz>({
     id: "",
     name: "",
@@ -61,7 +61,7 @@ const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
     autoScoring: true,
   });
   const [maxScore, setMaxScore] = useState<number>(100);
-  // Aplicamos debouncing al maxScore para evitar guardar cada cambio instantáneo
+  // Aplicamos debouncing al maxScore para esperar 700ms antes de propagar cambios
   const debouncedScore = useDebounced(maxScore, 700);
 
   const [questions, setQuestions] = useState<Question[]>([]);
@@ -90,7 +90,6 @@ const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
       .select("*")
       .eq("id", id)
       .single();
-
     if (error) {
       console.error("Error getting quiz", error);
     }
@@ -105,7 +104,6 @@ const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
     setCreating(true);
     const name = await generateProjectName();
     if (!name) return;
-
     // Insertamos name, autoScoring y maxScore en la BD
     const { data, error } = await supabase
       .from("quizzes")
@@ -131,7 +129,7 @@ const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
     }, 1000);
   };
 
-  // Al guardar, se actualiza el maxScore usando el debouncedScore
+  // Al guardar, se actualiza también el maxScore usando debouncedScore
   const saveQuiz = async () => {
     if (!quiz?.id) return;
     const publicStatus = isQuizReady ? debouncedQuiz?.isPublic : false;
@@ -169,7 +167,7 @@ const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
-  // Reparte los pesos equitativamente usando el valor de maxScore (del estado independiente)
+  // Función para repartir los pesos usando maxScore (del estado independiente)
   const distributeWeights = (qs: Question[], maxScore: number) => {
     const count = qs.length;
     if (count === 0) return qs;
@@ -421,8 +419,8 @@ const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
   // Efecto para actualizar isQuizReady y el mensaje de error usando debouncedScore.
   useEffect(() => {
     if (questions.length === 0) return;
-    // Si el sistema está en autoScoring, asumimos que la distribución se hará automáticamente
     if (quiz.autoScoring) {
+      // En autoScoring, asumimos que se distribuyen correctamente y no mostramos error.
       setIsQuizReady(true);
       setScoreError("");
       return;
@@ -442,10 +440,21 @@ const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   }, [questions, debouncedScore, quiz.autoScoring]);
 
-  // Actualiza isPublic en la BD si el quiz no está listo y figura como público.
+  // Efecto para actualizar isPublic según isQuizReady: si el quiz está listo se actualiza a true, si no, a false.
   useEffect(() => {
     if (!quiz.id) return;
-    if (!isQuizReady && quiz.isPublic) {
+    if (isQuizReady && !quiz.isPublic) {
+      updateQuiz("isPublic", true);
+      (async () => {
+        const { error } = await supabase
+          .from("quizzes")
+          .update({ isPublic: true })
+          .eq("id", quiz.id);
+        if (error) {
+          console.error("Error updating isPublic to true", error);
+        }
+      })();
+    } else if (!isQuizReady && quiz.isPublic) {
       updateQuiz("isPublic", false);
       (async () => {
         const { error } = await supabase
@@ -458,33 +467,6 @@ const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
       })();
     }
   }, [isQuizReady, quiz.id, quiz.isPublic]);
-
-  // Efecto para actualizar el maxScore: se guarda en la BD y, si está en autoScoring, se redistribuyen los pesos.
-  useEffect(() => {
-    if (!quiz.id) return;
-    updateQuiz("maxScore", debouncedScore);
-    (async () => {
-      const { error } = await supabase
-        .from("quizzes")
-        .update({ maxScore: debouncedScore })
-        .eq("id", quiz.id);
-      if (error) {
-        console.error("Error updating maxScore", error);
-      }
-      if (quiz.autoScoring && questions.length > 0) {
-        const newQuestions = distributeWeights(questions, debouncedScore);
-        setQuestions(newQuestions);
-        await Promise.all(
-          newQuestions.map((q) =>
-            supabase
-              .from("questions")
-              .update({ weight: q.weight })
-              .eq("id", q.id)
-          )
-        );
-      }
-    })();
-  }, [debouncedScore]);
 
   // Carga las preguntas una sola vez al tener el quiz.
   useEffect(() => {
@@ -506,7 +488,7 @@ const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
     saveIfChanged();
   }, [debouncedQuiz, pathname, quiz]);
 
-  // Limpia preguntas al cambiar de ruta
+  // Limpia preguntas al cambiar de ruta.
   useEffect(() => {
     setQuestionsGeted(false);
     setQuestions([]);
