@@ -35,7 +35,7 @@ type MyContextData = {
   generating: boolean;
   updateQuestionWeight: (questionId: string, newWeight: number) => void;
   scoreError: string;
-  calculateWeight: (currentWeight: number) => number;
+  calculateWeight: (currentWeight: string) => number;
   toggleAutoScoring: () => Promise<void>;
   isQuizReady: boolean;
   autoScoring: boolean;
@@ -232,18 +232,17 @@ const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
     setQuestions(updatedQuestions);
   };
 
-  const calculateWeight = (currentWeight: number) => {
-    if (quiz.autoScoring) {
-      return questions.length > 0
-        ? parseFloat((debouncedScore / questions.length).toFixed(2))
-        : 0;
-    } else {
-      return (
-        debouncedScore -
-        questions.reduce((sum, q) => sum + q.weight, 0) +
-        currentWeight
-      );
+  const calculateWeight = (questionId: string) => {
+    const totalOther = questions.reduce(
+      (sum, q) => (q.id === questionId ? sum : sum + q.weight),
+      0
+    );
+    const missingWeight = maxScore - totalOther;
+
+    if (missingWeight < 0) {
+      return 0;
     }
+    return parseFloat(missingWeight.toFixed(2));
   };
 
   // Cambia el modo de scoring. Si se activa el autoScoring, se recalculan los pesos si es necesario.

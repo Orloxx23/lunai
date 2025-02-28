@@ -27,6 +27,12 @@ import UploadContentOnQuestion from "./UploadContentOnQuestion";
 import { useDraggable } from "@dnd-kit/core";
 import { useSortable } from "@dnd-kit/sortable";
 import { Input } from "@/components/ui/input";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface Props {
   data: Question;
@@ -254,17 +260,31 @@ export default function QuestionEditor({ index, data }: Props) {
               min={0}
               disabled={autoScoring}
             />
-            <button
-              onClick={() => {
-                const newWeight = calculateWeight(weight);
-                setWeight(newWeight);
-                updateQuestionWeight(data.id, parseFloat(newWeight.toFixed(2)));
-              }}
-              disabled={autoScoring}
-              className="disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <IconProgressCheck size={18} />
-            </button>
+            <TooltipProvider delayDuration={100}>
+              <Tooltip>
+                <TooltipTrigger>
+                  {" "}
+                  <button
+                    onClick={() => {
+                      const newWeight = calculateWeight(data.id);
+                      console.log("🚀 ~ QuestionEditor ~ newWeight:", newWeight)
+                      setWeight(newWeight);
+                      updateQuestionWeight(
+                        data.id,
+                        parseFloat(newWeight.toFixed(2))
+                      );
+                    }}
+                    disabled={autoScoring}
+                    className="disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <IconProgressCheck size={18} />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Ajustar valor</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </div>
 
           <div>
