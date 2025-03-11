@@ -35,7 +35,7 @@ type MyContextData = {
   generating: boolean;
   updateQuestionWeight: (questionId: string, newWeight: number) => void;
   scoreError: string;
-  calculateWeight: (currentWeight: string) => number;
+  calculateWeight: (questionId: string) => number;
   toggleAutoScoring: () => Promise<void>;
   isQuizReady: boolean;
   autoScoring: boolean;
@@ -47,11 +47,10 @@ const EditorContext = createContext<MyContextData | undefined>(undefined);
 const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  let router = useRouter();
-  let pathname = usePathname();
+  const router = useRouter();
+  const pathname = usePathname();
+  const supabase = createClient();
 
-  // Estado del quiz (con valor inicial) y estado independiente para maxScore.
-  // Nota: El valor inicial de maxScore es 100, pero al cargar el quiz se actualizará con el valor de la BD.
   const [quiz, setQuiz] = useState<Quiz>({
     id: "",
     name: "",
@@ -59,11 +58,10 @@ const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
     description: "",
     isPublic: false,
     state: "exclusive",
-    maxScore: -1,
+    maxScore: 0,
     autoScoring: true,
   });
-  const [maxScore, setMaxScore] = useState<number>(quiz.maxScore || -1);
-  // Debouncing para maxScore: se espera 700ms antes de propagar el cambio.
+  const [maxScore, setMaxScore] = useState<number>(quiz.maxScore);
   const debouncedScore = useDebounced(maxScore, 700);
 
   const [questions, setQuestions] = useState<Question[]>([]);
@@ -78,11 +76,9 @@ const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
   const [loading, setLoading] = useState(true);
 
   const debouncedQuiz = useDebounced(quiz, 700);
-  const supabase = createClient();
 
-  // --- Efecto para cargar el quiz desde la URL ---
+  // --- Cargar cuestionario desde la URL ---
   useEffect(() => {
-    // Suponiendo que la URL es /dashboard/editor/{quizId}
     const parts = pathname.split("/");
     const id = parts[parts.length - 1];
     if (id && id !== "editor") {
@@ -90,7 +86,7 @@ const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   }, [pathname]);
 
-  // --- Nuevo efecto: si ya existe un quiz (su id no es vacío), forzamos cargarlo desde la BD ---
+  // --- Forzar recarga del cuestionario desde la DB si existe quiz.id ---
   useEffect(() => {
     if (quiz.id) {
       getQuiz(quiz.id);
@@ -98,10 +94,7 @@ const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
   }, [quiz.id]);
 
   const updateQuiz = (key: keyof Quiz, value: any) => {
-    setQuiz((prev) => ({
-      ...prev,
-      [key]: value,
-    }));
+    setQuiz((prev) => ({ ...prev, [key]: value }));
   };
 
   const getQuiz = async (id: string) => {
@@ -111,30 +104,34 @@ const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
       .eq("id", id)
       .single();
     if (error) {
-      console.error("Error getting quiz", error);
+      console.error("Error obteniendo el cuestionario", error);
     }
     if (data) {
-      setQuiz(data);
+      // Si maxScore es menor a 1, se asigna 0 por defecto
+      const validMaxScore = data.maxScore < 1 ? 0 : data.maxScore;
+      setQuiz({ ...data, maxScore: validMaxScore });
       setAutoScoring(data.autoScoring);
-      setMaxScore(data.maxScore);
+      setMaxScore(validMaxScore);
     }
-    setTimeout(() => {
-      setLoading(false);
-    }, 700);
+    setTimeout(() => setLoading(false), 700);
   };
 
   const createQuiz = async () => {
     setCreating(true);
     const name = await generateProjectName();
     if (!name) return;
-    // Insertamos name, autoScoring y maxScore en la BD
+    // Asegurar que maxScore es válido antes de insertar
+    const validMaxScore = maxScore < 1 ? 0 : maxScore;
     const { data, error } = await supabase
       .from("quizzes")
-      .insert([{ name, autoScoring: quiz.autoScoring, maxScore }])
+      .insert([
+        { name, autoScoring: quiz.autoScoring, maxScore: validMaxScore },
+      ])
       .select();
     if (error) {
-      console.error("Error creating quiz", error);
+      console.error("Error creando el cuestionario", error);
       setCreating(false);
+      return;
     }
     if (data) {
       setQuiz((prev) => ({
@@ -147,16 +144,15 @@ const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
       setMaxScore(data[0].maxScore);
       router.push(`/dashboard/editor/${data[0].id}`);
     }
-    setTimeout(() => {
-      setCreating(false);
-    }, 1000);
+    setTimeout(() => setCreating(false), 1000);
   };
 
-  // Al guardar, se actualiza maxScore usando debouncedScore.
+  // Guardar el cuestionario con maxScore validado (debe ser >= 1)
   const saveQuiz = async () => {
     if (!quiz?.id) return;
     const publicStatus = isQuizReady ? debouncedQuiz?.isPublic : false;
     setSaving(true);
+    const validScore = maxScore < 1 ? 0 : maxScore;
     const { error } = await supabase
       .from("quizzes")
       .update({
@@ -166,12 +162,12 @@ const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
         state: debouncedQuiz?.state,
         autoScoring: debouncedQuiz?.autoScoring,
         isPublic: publicStatus,
-        maxScore: maxScore === -1 ? undefined : maxScore,
+        maxScore: validScore,
       })
       .eq("id", debouncedQuiz?.id)
       .select();
     if (error) {
-      console.error("Error saving quiz", error);
+      console.error("Error guardando el cuestionario", error);
     }
     setSaving(false);
   };
@@ -182,7 +178,7 @@ const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
       .select("*")
       .eq("quizId", quiz?.id);
     if (error) {
-      console.error("Error getting questions", error);
+      console.error("Error obteniendo las preguntas", error);
       return;
     }
     if (data) {
@@ -190,11 +186,11 @@ const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
-  // Reparte los pesos usando maxScore (del estado independiente).
-  const distributeWeights = (qs: Question[], maxScore: number) => {
+  // Distribuir los pesos basados en un maxScore válido
+  const distributeWeights = (qs: Question[], maxScoreValue: number) => {
     const count = qs.length;
     if (count === 0) return qs;
-    const weight = parseFloat((maxScore / count).toFixed(2));
+    const weight = parseFloat((maxScoreValue / count).toFixed(2));
     return qs.map((q) => ({ ...q, weight }));
   };
 
@@ -206,7 +202,7 @@ const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
   const updateQuestionWeight = (questionId: string, newWeight: number) => {
     if (quiz.autoScoring) {
       setScoreError(
-        "El sistema de pesos está en automático, no se puede editar manualmente."
+        "La evaluación automática está activada; la edición manual de pesos está deshabilitada."
       );
       return;
     }
@@ -220,12 +216,12 @@ const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
       setScoreError("");
     } else if (totalWeight > debouncedScore) {
       setScoreError(
-        `El total de los pesos (${totalWeight.toFixed(2)}) supera el puntaje máximo de ${debouncedScore}`
+        `Los pesos totales (${totalWeight.toFixed(2)}) exceden el puntaje máximo de ${debouncedScore}`
       );
       return;
     } else {
       setScoreError(
-        `El total de los pesos (${totalWeight.toFixed(2)}) no alcanza el puntaje máximo de ${debouncedScore}`
+        `Los pesos totales (${totalWeight.toFixed(2)}) no alcanzan el puntaje máximo de ${debouncedScore}`
       );
     }
     updateQuestion(questionId, "weight", newWeight);
@@ -238,35 +234,29 @@ const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
       0
     );
     const missingWeight = maxScore - totalOther;
-
-    if (missingWeight < 0) {
-      return 0;
-    }
-    return parseFloat(missingWeight.toFixed(2));
+    return missingWeight < 0 ? 0 : parseFloat(missingWeight.toFixed(2));
   };
 
-  // Cambia el modo de scoring. Si se activa el autoScoring, se recalculan los pesos si es necesario.
+  // Alternar la evaluación automática y recalcular los pesos si es necesario
   const toggleAutoScoring = async () => {
     const newVal = !quiz.autoScoring;
     setQuiz((prev) => ({ ...prev, autoScoring: newVal }));
-    if (newVal) {
-      if (questions.length > 0) {
-        const expectedWeight = parseFloat(
-          (debouncedScore / questions.length).toFixed(2)
+    if (newVal && questions.length > 0) {
+      const expectedWeight = parseFloat(
+        (debouncedScore / questions.length).toFixed(2)
+      );
+      const needsUpdate = questions.some((q) => q.weight !== expectedWeight);
+      if (needsUpdate) {
+        const newQuestions = distributeWeights(questions, debouncedScore);
+        setQuestions(newQuestions);
+        await Promise.all(
+          newQuestions.map((q) =>
+            supabase
+              .from("questions")
+              .update({ weight: q.weight })
+              .eq("id", q.id)
+          )
         );
-        const needsUpdate = questions.some((q) => q.weight !== expectedWeight);
-        if (needsUpdate) {
-          const newQuestions = distributeWeights(questions, debouncedScore);
-          setQuestions(newQuestions);
-          await Promise.all(
-            newQuestions.map((q) =>
-              supabase
-                .from("questions")
-                .update({ weight: q.weight })
-                .eq("id", q.id)
-            )
-          );
-        }
       }
     }
     await supabase
@@ -295,19 +285,14 @@ const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
       .insert([newQuestion])
       .select();
     if (error) {
-      console.error("Error creating question", error);
+      console.error("Error creando la pregunta", error);
       setQuestions((prev) => prev.filter((q) => q.id !== newQuestion.id));
-    } else {
-      if (quiz.autoScoring && debouncedScore) {
-        await Promise.all(
-          newQuestions.map((q) =>
-            supabase
-              .from("questions")
-              .update({ weight: q.weight })
-              .eq("id", q.id)
-          )
-        );
-      }
+    } else if (quiz.autoScoring && debouncedScore) {
+      await Promise.all(
+        newQuestions.map((q) =>
+          supabase.from("questions").update({ weight: q.weight }).eq("id", q.id)
+        )
+      );
     }
   };
 
@@ -321,21 +306,16 @@ const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
       .eq("id", questionId)
       .select();
     if (error) {
-      console.error("Error deleting question", error);
+      console.error("Error eliminando la pregunta", error);
       getQuestions();
-    } else {
-      if (quiz.autoScoring && debouncedScore) {
-        const newQuestions = distributeWeights(tempQuestions, debouncedScore);
-        setQuestions(newQuestions);
-        await Promise.all(
-          newQuestions.map((q) =>
-            supabase
-              .from("questions")
-              .update({ weight: q.weight })
-              .eq("id", q.id)
-          )
-        );
-      }
+    } else if (quiz.autoScoring && debouncedScore) {
+      const newQuestions = distributeWeights(tempQuestions, debouncedScore);
+      setQuestions(newQuestions);
+      await Promise.all(
+        newQuestions.map((q) =>
+          supabase.from("questions").update({ weight: q.weight }).eq("id", q.id)
+        )
+      );
     }
     setSaving(false);
   };
@@ -354,7 +334,7 @@ const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
       .update({ [key]: value })
       .eq("id", questionId);
     if (error) {
-      console.error("Error updating question", error);
+      console.error("Error actualizando la pregunta", error);
       getQuestions();
     }
     setSaving(false);
@@ -390,7 +370,7 @@ const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
             .insert([newQuestion])
             .select();
           if (questionError) {
-            console.error("Error creating question", questionError);
+            console.error("Error creando la pregunta", questionError);
             return null;
           }
           const optionsInserts = question.options.map(async (option: any) => {
@@ -406,7 +386,7 @@ const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
               .insert([newOption])
               .select();
             if (optionError) {
-              console.error("Error creating option", optionError);
+              console.error("Error creando la opción", optionError);
               return null;
             }
             return newOption;
@@ -432,13 +412,13 @@ const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
       setQuestions(updatedQuestions);
       if (callback) callback();
     } catch (err) {
-      console.error("Error generating questions", err);
+      console.error("Error generando las preguntas", err);
     } finally {
       setGenerating(false);
     }
   };
 
-  // Efecto para actualizar isQuizReady y el mensaje de error usando debouncedScore.
+  // Actualizar isQuizReady y el mensaje de error basado en los pesos y maxScore
   useEffect(() => {
     if (questions.length === 0) return;
     if (quiz.autoScoring) {
@@ -454,14 +434,14 @@ const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
     setIsQuizReady(ready);
     if (!ready) {
       setScoreError(
-        `El total de los pesos (${totalWeight.toFixed(2)}) no coincide con el puntaje máximo de ${debouncedScore} o alguna pregunta no cumple el mínimo.`
+        `Los pesos totales (${totalWeight.toFixed(2)}) no coinciden con el puntaje máximo de ${debouncedScore} o alguna pregunta está por debajo del mínimo.`
       );
     } else {
       setScoreError("");
     }
   }, [questions, debouncedScore, quiz.autoScoring]);
 
-  // Efecto para actualizar isPublic según isQuizReady.
+  // Actualizar isPublic basado en el estado de isQuizReady
   useEffect(() => {
     if (!quiz.id) return;
     if (isQuizReady && !quiz.isPublic) {
@@ -471,9 +451,7 @@ const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
           .from("quizzes")
           .update({ isPublic: true })
           .eq("id", quiz.id);
-        if (error) {
-          console.error("Error updating isPublic to true", error);
-        }
+        if (error) console.error("Error actualizando isPublic a true", error);
       })();
     } else if (!isQuizReady && quiz.isPublic) {
       updateQuiz("isPublic", false);
@@ -482,17 +460,19 @@ const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
           .from("quizzes")
           .update({ isPublic: false })
           .eq("id", quiz.id);
-        if (error) {
-          console.error("Error updating isPublic to false", error);
-        }
+        if (error) console.error("Error actualizando isPublic a false", error);
       })();
     }
   }, [isQuizReady, quiz.id, quiz.isPublic]);
 
-  // Efecto para actualizar el maxScore en la BD y, si está en autoScoring, redistribuir los pesos.
+  // Actualizar maxScore en la DB y redistribuir los pesos si está en modo de evaluación automática
   useEffect(() => {
     if (!quiz.id) return;
-    if (debouncedScore === -1) return;
+    // Validar debouncedScore; si es menor a 1, asignar 0 por defecto y salir del efecto.
+    if (debouncedScore < 1) {
+      setMaxScore(0);
+      return;
+    }
     updateQuiz("maxScore", debouncedScore);
     (async () => {
       const { error } = await supabase
@@ -500,7 +480,7 @@ const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
         .update({ maxScore: debouncedScore })
         .eq("id", quiz.id);
       if (error) {
-        console.error("Error updating maxScore", error);
+        console.error("Error actualizando maxScore", error);
       }
       if (quiz.autoScoring && questions.length > 0) {
         const newQuestions = distributeWeights(questions, debouncedScore);
@@ -517,14 +497,14 @@ const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
     })();
   }, [debouncedScore, quiz.id, quiz.autoScoring, questions.length]);
 
-  // Carga las preguntas una sola vez al tener el quiz.
+  // Cargar preguntas una vez que el cuestionario esté disponible
   useEffect(() => {
     if (!quiz || !quiz.id || questionsGeted) return;
     getQuestions();
     setQuestionsGeted(true);
   }, [quiz, questionsGeted]);
 
-  // Guarda cambios cuando cambia el quiz (debounced)
+  // Guardar cambios cuando el cuestionario cambia (debounced)
   useEffect(() => {
     if (!quiz) return;
     const saveIfChanged = async () => {
@@ -533,43 +513,65 @@ const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
     };
     document.title = quiz.id
       ? `${quiz?.name || "Cuestionario sin nombre"} - ${APP_NAME}`
-      : `${APP_NAME}: El Poder del Conocimiento con Inteligencia Artificial`;
+      : `${APP_NAME}: El poder del conocimiento con IA`;
     saveIfChanged();
   }, [debouncedQuiz, pathname, quiz]);
 
-  // Limpia preguntas al cambiar de ruta.
+  // Limpiar preguntas al cambiar de ruta
   useEffect(() => {
     setQuestionsGeted(false);
     setQuestions([]);
   }, [pathname]);
 
-  // Sincroniza el estado local de autoScoring con el del quiz.
+  // Sincronizar el estado local de autoScoring con el estado del cuestionario
   useEffect(() => {
+    setMaxScore(quiz.maxScore);
     setAutoScoring(quiz.autoScoring);
   }, [quiz]);
 
   useEffect(() => {
-    if (autoScoring) {
+    if (pathname !== "/dashboard/editor") {
+      // Reiniciar el cuestionario y configuraciones para preparar un nuevo cuestionario o editar otro
+      setQuiz({
+        id: "",
+        name: "",
+        title: "",
+        description: "",
+        isPublic: false,
+        state: "exclusive",
+        maxScore: 0,
+        autoScoring: true,
+      });
+
+      setQuestions([]);
+      setQuestionsGeted(false);
+      setSaving(false);
+      setCreating(false);
+      setScoreError("");
+      setIsQuizReady(false);
+      setAutoScoring(true);
+      setLoading(true);
+    }
+  }, [pathname]);
+
+  useEffect(() => {
+    if (autoScoring && questions.length > 0) {
       (async () => {
-        if (questions.length > 0) {
-          const expectedWeight = parseFloat(
-            (debouncedScore / questions.length).toFixed(2)
+        const expectedWeight = parseFloat(
+          (debouncedScore / questions.length).toFixed(2)
+        );
+        const needsUpdate = questions.some((q) => q.weight !== expectedWeight);
+        if (needsUpdate) {
+          const newQuestions = distributeWeights(questions, debouncedScore);
+          setQuestions(newQuestions);
+          await Promise.all(
+            newQuestions.map((q) =>
+              supabase
+                .from("questions")
+                .update({ weight: q.weight })
+                .eq("id", q.id)
+            )
           );
-          const needsUpdate = questions.some(
-            (q) => q.weight !== expectedWeight
-          );
-          if (needsUpdate) {
-            const newQuestions = distributeWeights(questions, debouncedScore);
-            setQuestions(newQuestions);
-            await Promise.all(
-              newQuestions.map((q) =>
-                supabase
-                  .from("questions")
-                  .update({ weight: q.weight })
-                  .eq("id", q.id)
-              )
-            );
-          }
         }
       })();
     }
@@ -614,7 +616,7 @@ const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
 const useEditor = (): MyContextData => {
   const context = useContext(EditorContext);
   if (!context) {
-    throw new Error("useEditor debe ser utilizado dentro de un EditorProvider");
+    throw new Error("useEditor debe usarse dentro de un EditorProvider");
   }
   return context;
 };
