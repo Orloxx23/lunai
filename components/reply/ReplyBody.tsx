@@ -149,7 +149,7 @@ export default function QuizForm({ quiz, questions, options, user }: Props) {
           return null;
         }
       case "open":
-        return <Textarea {...field} placeholder="Enter your answer here" />;
+        return <Textarea {...field} placeholder="Ingresa tu respuesta aqui" />;
     }
   };
 
